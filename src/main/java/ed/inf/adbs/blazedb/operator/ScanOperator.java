@@ -11,8 +11,13 @@ public class ScanOperator extends Operator{
     private String filePath;
 
     public ScanOperator(String tableName) throws Exception {
-        this.filePath = Catalog.getInstance().getTableFilePath(tableName);
-        reset(); // Reset the operator
+        try {
+            this.filePath = Catalog.getInstance().getTableFilePath(tableName);
+            reset(); // Reset the operator
+            } catch (Exception e) {
+            e.printStackTrace();
+            throw new Exception("Table file not found");
+        }
     }
 
     @Override
