@@ -63,4 +63,15 @@ public class Catalog {
         return schemaMap.get(tableName);
     }
 
+    // Identify the index of the column in the table for Selection
+    public int getColumnIndex(String tableName, String columnName) {
+        String[] columns = schemaMap.get(tableName);
+        for (int i = 0; i < columns.length; i++) {
+            if (columns[i].equals(columnName)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Column " + columnName + " not found in table " + tableName);
+    }
+
 }
