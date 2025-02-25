@@ -3,6 +3,8 @@ package ed.inf.adbs.blazedb;
 import java.io.*;
 
 import ed.inf.adbs.blazedb.operator.ScanOperator;
+import ed.inf.adbs.blazedb.operator.SelectOperator;
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -25,6 +27,7 @@ public class BlazeDB {
 
 	public static void main(String[] args) throws Exception {
 
+		/*
 		if (args.length != 3) {
 			System.err.println("Usage: BlazeDB database_dir input_file output_file");
 			return;
@@ -33,15 +36,18 @@ public class BlazeDB {
 		String databaseDir = args[0]; // Where database is
 		String inputFile = args[1]; // Where the query input is
 		String outputFile = args[2]; // The name of the file where the result will be written
+		*/
+
+		String databaseDir = "samples/db"; // Where database is
+		String inputFile = "samples/input/query1.sql"; // Where the query input is
 
 
 		// Loading all table that we have in the schema
 		Catalog catalog = Catalog.getInstance(); // because of singleton pattern
         catalog.loadSchema(databaseDir);
 
-
 		// Just for demonstration, replace this function call with your logic
-		parsingExample(inputFile);
+		parsingSQL(inputFile);
 	}
 
 	/**
@@ -49,28 +55,31 @@ public class BlazeDB {
 	 * from a file or a string and prints the SELECT and WHERE clauses to screen.
 	 */
 
-	public static void parsingExample(String filename) {
+
+	public static void parsingSQL(String filename) {
 		try {
-			Statement statement = CCJSqlParserUtil.parse(new FileReader(filename));
-			//Statement statement = CCJSqlParserUtil.parse("SELECT Course.cid, Student.name FROM Course, Student WHERE Student.sid = 3");
-			//
-			// Real Example
-			PlainSelect plainSelect = (PlainSelect) ((Select) statement).getSelectBody();
-			String tableName = plainSelect.getFromItem().toString();
+			//Statement statement = CCJSqlParserUtil.parse(new FileReader(filename));
+			Statement statement = CCJSqlParserUtil.parse("SELECT * FROM Student WHERE Student.A = 3");
 
-			Operator scanOperator = new ScanOperator(tableName);
-			execute(scanOperator, "output.txt");
-
-			// To review the parsing
-            //Statement statement = CCJSqlParserUtil.parse("SELECT Course.cid, Student.name FROM Course, Student WHERE Student.sid = 3");
 			if (statement != null) {
-
 				Select select = (Select) statement;
 				System.out.println("Statement: " + select);
 				System.out.println("SELECT items: " + select.getPlainSelect().getSelectItems());
 				System.out.println("FROM clause: " + select.getPlainSelect().getFromItem());
 				System.out.println("OTHER TABLES: " + select.getPlainSelect().getJoins());
 				System.out.println("WHERE expression: " + select.getPlainSelect().getWhere());
+
+				// Extracting the table name and the condition
+				PlainSelect plainSelect = (PlainSelect) ((Select) statement).getSelectBody();
+				String tableName = plainSelect.getFromItem().toString();
+				Expression conditionExpression = plainSelect.getWhere();
+
+				// Organising the tree of operators
+				Operator scanOperator = new ScanOperator(tableName);
+				Operator selectOperator = new SelectOperator(scanOperator, conditionExpression);
+
+				// Execute the query plan
+				execute(selectOperator, "samples/output/output.txt");
 			}
 		} catch (Exception e) {
 			System.err.println("Exception occurred during parsing");
