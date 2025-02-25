@@ -2,6 +2,7 @@ package ed.inf.adbs.blazedb.operator;
 
 import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
+import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -12,10 +13,15 @@ import static org.junit.Assert.assertTrue;
 
 public class ScanOperatorTest {
 
-    @Test
-    public void testGetNextTupleWithStudentTable() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         Catalog catalog = Catalog.getInstance(); // because of singleton pattern
         catalog.loadSchema("samples/db");
+    }
+
+    @Test
+    public void testGetNextTupleWithStudentTable() throws Exception {
+
         ScanOperator scanOperator = new ScanOperator("Student");
 
         Tuple tuple1 = scanOperator.getNextTuple();
@@ -48,8 +54,7 @@ public class ScanOperatorTest {
 
     @Test
     public void testReset() throws Exception {
-        Catalog catalog = Catalog.getInstance();
-        catalog.loadSchema("samples/db");
+
         ScanOperator scanOperator = new ScanOperator("Student");
 
         // first tuple
@@ -72,8 +77,7 @@ public class ScanOperatorTest {
 
     @Test
     public void getNextTupleWithNullTable() throws Exception {
-        Catalog catalog = Catalog.getInstance();
-        catalog.loadSchema("samples/db");
+
         ScanOperator scanOperator = new ScanOperator("Example");
 
         Tuple tuple = scanOperator.getNextTuple();
@@ -82,8 +86,6 @@ public class ScanOperatorTest {
 
     @Test
     public void getNextTupleWithNonExistentTable() throws Exception {
-        Catalog catalog = Catalog.getInstance();
-        catalog.loadSchema("samples/db");
 
         Exception exception = assertThrows(Exception.class, () -> {
             new ScanOperator("NonExistentTable");
