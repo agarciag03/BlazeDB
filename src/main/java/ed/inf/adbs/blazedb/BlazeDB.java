@@ -1,7 +1,10 @@
 package ed.inf.adbs.blazedb;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
+import ed.inf.adbs.blazedb.operator.ProjectOperator;
 import ed.inf.adbs.blazedb.operator.ScanOperator;
 import ed.inf.adbs.blazedb.operator.SelectOperator;
 import net.sf.jsqlparser.expression.Expression;
@@ -10,6 +13,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import ed.inf.adbs.blazedb.operator.Operator;
+import net.sf.jsqlparser.statement.select.SelectItem;
 
 /**
  * Lightweight in-memory database system.
@@ -39,7 +43,7 @@ public class BlazeDB {
 		*/
 
 		String databaseDir = "samples/db"; // Where database is
-		String inputFile = "samples/input/query1.sql"; // Where the query input is
+		String inputFile = "samples/input/query3.sql"; // Where the query input is
 
 
 		// Loading all table that we have in the schema
@@ -59,7 +63,7 @@ public class BlazeDB {
 	public static void parsingSQL(String filename) {
 		try {
 			//Statement statement = CCJSqlParserUtil.parse(new FileReader(filename));
-			Statement statement = CCJSqlParserUtil.parse("SELECT * FROM Student WHERE Student.A = 3");
+			Statement statement = CCJSqlParserUtil.parse("SELECT Student.D, Student.C, Student.B, Student.A  FROM Student WHERE Student.A = 1");
 
 			if (statement != null) {
 				Select select = (Select) statement;
@@ -73,13 +77,15 @@ public class BlazeDB {
 				PlainSelect plainSelect = (PlainSelect) ((Select) statement).getSelectBody();
 				String tableName = plainSelect.getFromItem().toString();
 				Expression conditionExpression = plainSelect.getWhere();
+				List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
 
 				// Organising the tree of operators
 				Operator scanOperator = new ScanOperator(tableName);
 				Operator selectOperator = new SelectOperator(scanOperator, conditionExpression);
+				Operator projectOperator = new ProjectOperator(selectOperator, selectItems);
 
 				// Execute the query plan
-				execute(selectOperator, "samples/output/output.txt");
+				execute(projectOperator, "samples/output/output.txt");
 			}
 		} catch (Exception e) {
 			System.err.println("Exception occurred during parsing");

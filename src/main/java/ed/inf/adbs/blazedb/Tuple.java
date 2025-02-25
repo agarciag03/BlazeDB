@@ -21,9 +21,26 @@ public class Tuple {
         }
     }
 
+    // Constructor #2
+    public Tuple() {
+        values = new ArrayList<>();
+    }
+
     // This methods allows to get a particular value based on the index
     public Integer getValue(int index) {
         return values.get(index);
+    }
+
+    public Integer deleteValue(int index) {
+        return values.remove(index);
+    }
+
+    public void addValue(int value) {
+        values.add(value);
+    }
+
+    public Integer size() {
+        return values.size();
     }
 
 //    //this method allows to get a particular value based on the column name
