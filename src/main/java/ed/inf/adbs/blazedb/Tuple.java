@@ -22,9 +22,15 @@ public class Tuple {
     }
 
     // This methods allows to get a particular value based on the index
-    public Integer get(int index) {
+    public Integer getValue(int index) {
         return values.get(index);
     }
+
+//    //this method allows to get a particular value based on the column name
+//    public Integer getValue(String columnName) {
+//
+//        return values.get(index);
+//    }
 
     //This method returns the tuples values split by a comma as expected output shows
     @Override
