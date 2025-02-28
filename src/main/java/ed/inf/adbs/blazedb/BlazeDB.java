@@ -36,14 +36,24 @@ public class BlazeDB {
 			System.err.println("Usage: BlazeDB database_dir input_file output_file");
 			return;
 		}
-
+*/
 		String databaseDir = args[0]; // Where database is
 		String inputFile = args[1]; // Where the query input is
 		String outputFile = args[2]; // The name of the file where the result will be written
-		*/
 
-		String databaseDir = "samples/db"; // Where database is
-		String inputFile = "samples/input/query3.sql"; // Where the query input is
+
+//		String databaseDir = "samples/db"; // Where database is
+//		String inputFile = "samples/input/example.sql"; // Where the query input is
+//		String outputFile = "samples/output/example.txt";
+		//String outputFile = "samples/output/output.txt"; // The name of the file where the result will be written
+
+		// REvision
+		Statement statement = CCJSqlParserUtil.parse("SELECT * FROM Student WHERE Student.A = 1");
+
+		Select select = (Select) statement;
+		PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
+
 
 
 		// Loading all table that we have in the schema
@@ -51,7 +61,15 @@ public class BlazeDB {
         catalog.loadSchema(databaseDir);
 
 		// Just for demonstration, replace this function call with your logic
-		parsingSQL(inputFile);
+		QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
+		// Parse the SQL query
+		queryPlanBuilder.parsingSQL(inputFile);
+		// Build the query plan
+		Operator rootOperator = queryPlanBuilder.buildQueryPlan();
+		// Execute the query plan
+		execute(rootOperator, outputFile);
+
+		//parsingSQL(inputFile);
 	}
 
 	/**
@@ -59,11 +77,11 @@ public class BlazeDB {
 	 * from a file or a string and prints the SELECT and WHERE clauses to screen.
 	 */
 
-
+/*
 	public static void parsingSQL(String filename) {
 		try {
 			//Statement statement = CCJSqlParserUtil.parse(new FileReader(filename));
-			Statement statement = CCJSqlParserUtil.parse("SELECT Student.D, Student.C, Student.B, Student.A  FROM Student WHERE Student.A = 1");
+			Statement statement = CCJSqlParserUtil.parse("SELECT Student.*  FROM Student WHERE Student.A = 1");
 
 			if (statement != null) {
 				Select select = (Select) statement;
@@ -92,6 +110,9 @@ public class BlazeDB {
 			e.printStackTrace();
 		}
 	}
+	*/
+
+
 
 	/**
 	 * Executes the provided query plan by repeatedly calling `getNextTuple()`
