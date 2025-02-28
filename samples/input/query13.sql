@@ -1,0 +1,1 @@
+SELECT Student.C FROM Student WHERE Student.A = 1 AND Student.B = 200;
