@@ -201,4 +201,23 @@ public class ConditionEvaluatorTest {
 
     }
 
+    @Test
+    public void testAndCondition2Options() throws Exception {
+        Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 1 AND Student.B = 200");
+        ConditionEvaluator evaluator = new ConditionEvaluator(condition);
+        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33")));
+    }
+
+    @Test
+    public void testAndCondition4Options() throws Exception {
+        Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 1 AND Student.B = 200 AND Student.C = 50 AND Student.D >= 33");
+        ConditionEvaluator evaluator = new ConditionEvaluator(condition);
+        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33")));
+    }
+
+
 }

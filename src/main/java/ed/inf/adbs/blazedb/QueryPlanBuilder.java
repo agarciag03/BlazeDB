@@ -24,37 +24,20 @@ import java.util.List;
 
 public class QueryPlanBuilder {
     //private Select select = null;
-    private PlainSelect plainSelect = null;
+    //private PlainSelect plainSelect = null;
 
-    // Method to parse the SQL query - Catch any problem at parsing time
-    public void parsingSQL(String inputFile) throws Exception {
-        try {
-            Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
-            //Statement statement = CCJSqlParserUtil.parse("SELECT Student.A  FROM Student WHERE Student.A = 1");
-
-
-            if (statement != null) {
-                Select select = (Select) statement;
-                plainSelect = (PlainSelect) select.getSelectBody();
-
-                System.out.println("Statement: " + select);
-//                System.out.println("SELECT items: " + select.getPlainSelect().getSelectItems());
-//                System.out.println("FROM clause: " + select.getPlainSelect().getFromItem());
-//                System.out.println("OTHER TABLES: " + select.getPlainSelect().getJoins());
-//                System.out.println("WHERE expression: " + select.getPlainSelect().getWhere());
-
-            }
-        } catch (Exception e) {
-            System.err.println("Exception occurred during parsing");
-            e.printStackTrace();
-        }
-    }
 
     // Method to build the query plan based on the query -suitable query plan
-    public Operator buildQueryPlan() throws Exception {
+    public static Operator buildQueryPlan(Statement statement) throws Exception {
+
+        // Create a select
+        Select select = (Select) statement;
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
 
         boolean projection = false;
         boolean selection = false;
+
         Operator rootOperator = null;
 
         //PlainSelect plainSelect = (PlainSelect) ((Select) statement).getSelectBody();
@@ -83,15 +66,16 @@ public class QueryPlanBuilder {
         Operator scanOperator = new ScanOperator(tableName);
         rootOperator = scanOperator;
 
-        if (projection) {
-            Operator projectOperator = new ProjectOperator(scanOperator, selectItems);
-            rootOperator = projectOperator;
-        }
         if (selection) {
             // review later that I can fix this operators I need to find a way to optimise them
             Operator selectOperator = new SelectOperator(rootOperator, conditionExpression);
             rootOperator = selectOperator;
         }
+        if (projection) {
+            Operator projectOperator = new ProjectOperator(rootOperator, selectItems);
+            rootOperator = projectOperator;
+        }
+
 
 
         //Operator selectOperator = new SelectOperator(scanOperator, conditionExpression);

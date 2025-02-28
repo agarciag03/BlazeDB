@@ -61,4 +61,17 @@ public class BlazeDBTest {
 
 		assertEquals(expected, result);
 	}
+
+	// Add all cases that the CW requires
+
+	// New case: Projections and selection at the same time
+	@Test
+	public void query13Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query13.sql", "samples/output/query13.txt"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/query13.txt"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query13.csv"));
+
+		assertEquals(expected, result);
+	}
 }

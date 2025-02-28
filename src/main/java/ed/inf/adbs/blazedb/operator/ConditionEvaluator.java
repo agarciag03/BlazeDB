@@ -4,6 +4,7 @@ import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
@@ -19,11 +20,73 @@ public class ConditionEvaluator extends ExpressionDeParser {
 
     public boolean evaluate(Tuple tuple) {
         this.tuple = tuple;
-        condition.accept(this);
-        return result;
+        return evaluateExpression(condition, tuple);
+    }
+
+    // Recurrent function to evaluate the expression with  many ANDs
+    private boolean evaluateExpression(Expression expression, Tuple tuple) {
+        this.tuple = tuple;
+        if (expression instanceof AndExpression) {
+            AndExpression andExpression = (AndExpression) expression;
+            return evaluateExpression(andExpression.getLeftExpression(), tuple) &&
+                    evaluateExpression(andExpression.getRightExpression(), tuple);
+        } else {
+            expression.accept(this);
+            return result;
+        }
+    }
+
+    /*
+    public boolean evaluate(Tuple tuple) {
+        boolean result = false;
+        if (condition instanceof AndExpression) {
+            AndExpression andExpression = (AndExpression) condition;
+            while (andExpression.getLeftExpression() != null && andExpression.getRightExpression() != null) {
+                return result && evaluateAndExpression(andExpression, tuple);
+            }
+//            boolean evaluateLeftExpressionExpression = evaluateExpression(andExpression.getLeftExpression(), tuple);
+//            boolean evaluateRightExpression = evaluateExpression(andExpression.getRightExpression(), tuple);
+//            //return evaluateExpression(andExpression.getLeftExpression(), tuple) && evaluateExpression(andExpression.getRightExpression(), tuple);
+//            return evaluateLeftExpressionExpression && evaluateRightExpression;
+        }
+        else {
+            return evaluateExpression(condition, tuple);
+        }
+//        this.tuple = tuple;
+//        condition.accept(this);
+//        return result;
     }
 
 
+
+    private boolean evaluateAndExpression(AndExpression andExpression, Tuple tuple) {
+        boolean evaluateLeftExpressionExpression = evaluateExpression(andExpression.getLeftExpression(), tuple);
+        boolean evaluateRightExpression = evaluateExpression(andExpression.getRightExpression(), tuple);
+        return evaluateLeftExpressionExpression && evaluateRightExpression;
+    }
+
+    private boolean evaluateExpression(Expression expression, Tuple tuple) {
+        this.tuple = tuple;
+        expression.accept(this);
+        return result;
+//        if (expression instanceof EqualsTo){
+//
+//        } else if (expression instanceof NotEqualsTo){
+//
+//        } else if (expression instanceof GreaterThan){
+//
+//        } else if (expression instanceof GreaterThanEquals){
+//
+//        } else if (expression instanceof MinorThan){
+//
+//        } else if (expression instanceof MinorThanEquals){
+//
+//        } else if (expression instanceof Column){
+//
+//        }
+//        return false;
+    }
+*/
 
 //    @Override
 //    public void visit(EqualsTo equalsTo) {

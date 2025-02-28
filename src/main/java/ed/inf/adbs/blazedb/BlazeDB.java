@@ -1,20 +1,5 @@
 package ed.inf.adbs.blazedb;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import ed.inf.adbs.blazedb.operator.ProjectOperator;
-import ed.inf.adbs.blazedb.operator.ScanOperator;
-import ed.inf.adbs.blazedb.operator.SelectOperator;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.Statement;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import ed.inf.adbs.blazedb.operator.Operator;
-import net.sf.jsqlparser.statement.select.SelectItem;
-
 /**
  * Lightweight in-memory database system.
  *
@@ -23,10 +8,6 @@ import net.sf.jsqlparser.statement.select.SelectItem;
  *
  */
 
-/* TO IMPROVE:
- * 1. Exceptions
- * 2. Test Units
- */
 public class BlazeDB {
 
 	public static void main(String[] args) throws Exception {
@@ -36,38 +17,38 @@ public class BlazeDB {
 			System.err.println("Usage: BlazeDB database_dir input_file output_file");
 			return;
 		}
-*/
+
 		String databaseDir = args[0]; // Where database is
 		String inputFile = args[1]; // Where the query input is
 		String outputFile = args[2]; // The name of the file where the result will be written
+*/
 
+		String databaseDir = "samples/db"; // Where database is
+		String inputFile = "samples/input/example.sql"; // Where the query input is
+		String outputFile = "samples/output/example.csv";
 
-//		String databaseDir = "samples/db"; // Where database is
-//		String inputFile = "samples/input/example.sql"; // Where the query input is
-//		String outputFile = "samples/output/example.txt";
-		//String outputFile = "samples/output/output.txt"; // The name of the file where the result will be written
+		QueryInterpreter.interpretQuery(databaseDir, inputFile, outputFile);
 
 		// REvision
-		Statement statement = CCJSqlParserUtil.parse("SELECT * FROM Student WHERE Student.A = 1");
-
-		Select select = (Select) statement;
-		PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
-
-
+//		Statement statement = CCJSqlParserUtil.parse("SELECT * FROM Student WHERE Student.A = 1");
+//
+//		Select select = (Select) statement;
+//		PlainSelect plainSelect1 = (PlainSelect) select.getSelectBody();
 
 
-		// Loading all table that we have in the schema
-		Catalog catalog = Catalog.getInstance(); // because of singleton pattern
-        catalog.loadSchema(databaseDir);
+
+
+//		// Loading all table that we have in the schema
+//		Catalog catalog = Catalog.getInstance(); // because of singleton pattern
+//        catalog.loadSchema(databaseDir);
 
 		// Just for demonstration, replace this function call with your logic
-		QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
-		// Parse the SQL query
-		queryPlanBuilder.parsingSQL(inputFile);
+		//QueryInterpreter queryInterpreter = new QueryInterpreter();
+		//QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
 		// Build the query plan
-		Operator rootOperator = queryPlanBuilder.buildQueryPlan();
+		//Operator rootOperator = queryPlanBuilder.buildQueryPlan(queryInterpreter.parsingSQL(inputFile));
 		// Execute the query plan
-		execute(rootOperator, outputFile);
+		//execute(rootOperator, outputFile);
 
 		//parsingSQL(inputFile);
 	}
@@ -121,24 +102,24 @@ public class BlazeDB {
 	 * @param root The root operator of the operator tree (assumed to be non-null).
 	 * @param outputFile The name of the file where the result will be written.
 	 */
-	public static void execute(Operator root, String outputFile) throws Exception {
-		try {
-			// Create a BufferedWriter
-			BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-
-			// Iterate over the tuples produced by root
-			Tuple tuple = root.getNextTuple();
-			while (tuple != null) {
-				writer.write(tuple.toString());
-				writer.newLine();
-				tuple = root.getNextTuple();
-			}
-
-			// Close the writer
-			writer.close();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+//	public static void execute(Operator root, String outputFile) throws Exception {
+//		try {
+//			// Create a BufferedWriter
+//			BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+//
+//			// Iterate over the tuples produced by root
+//			Tuple tuple = root.getNextTuple();
+//			while (tuple != null) {
+//				writer.write(tuple.toString());
+//				writer.newLine();
+//				tuple = root.getNextTuple();
+//			}
+//
+//			// Close the writer
+//			writer.close();
+//		}
+//		catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 }
