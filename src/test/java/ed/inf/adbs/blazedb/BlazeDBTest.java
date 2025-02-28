@@ -1,8 +1,13 @@
 package ed.inf.adbs.blazedb;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Unit tests for BlazeDB.
@@ -15,5 +20,45 @@ public class BlazeDBTest {
 	@Test
 	public void shouldAnswerWithTrue() {
 		assertTrue(true);
+	}
+
+	@Test
+	public void query1Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query1.sql", "samples/output/query1.txt"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/query1.txt"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query1.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query2Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query2.sql", "samples/output/query2.txt"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/query2.txt"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query2.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query3Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query3.sql", "samples/output/query3.txt"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/query3.txt"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query3.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query4Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query4.sql", "samples/output/query4.txt"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/query4.txt"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query4.csv"));
+
+		assertEquals(expected, result);
 	}
 }
