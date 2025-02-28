@@ -3,6 +3,7 @@ package ed.inf.adbs.blazedb.operator;
 import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.SelectItem;
 
@@ -15,6 +16,7 @@ public class ProjectOperator extends Operator {
     private Operator child;
     private List<Integer> columnIndexes;
 
+    // Constructor
     public ProjectOperator(Operator child, List<SelectItem> selectItems) {
         this.child = child;
         this.columnIndexes = new ArrayList<>();
@@ -34,7 +36,17 @@ public class ProjectOperator extends Operator {
 
     @Override
     public Tuple getNextTuple() throws Exception {
-        Tuple tuple = child.getNextTuple();
+        return projectTuple(child.getNextTuple(), columnIndexes);
+    }
+
+    @Override
+    public void reset() throws Exception {
+        child.reset();
+    }
+
+    // Method to project a tuple based on the column indexes
+    public Tuple projectTuple(Tuple tuple, List<Integer> columnIndexes) {
+        //organise the code to be the same
         if (tuple != null) {
             Tuple projectedTuple = new Tuple();
             for (int index : columnIndexes) {
@@ -43,11 +55,6 @@ public class ProjectOperator extends Operator {
             return projectedTuple;
         }
         return null;
-
     }
 
-    @Override
-    public void reset() throws Exception {
-        child.reset();
-    }
 }
