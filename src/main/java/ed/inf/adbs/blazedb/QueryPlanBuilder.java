@@ -1,56 +1,44 @@
 package ed.inf.adbs.blazedb;
 
+import ed.inf.adbs.blazedb.operator.Operator;
 import ed.inf.adbs.blazedb.operator.ProjectOperator;
 import ed.inf.adbs.blazedb.operator.ScanOperator;
 import ed.inf.adbs.blazedb.operator.SelectOperator;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import ed.inf.adbs.blazedb.operator.Operator;
 import net.sf.jsqlparser.statement.select.SelectItem;
 
-import java.io.FileReader;
 import java.util.List;
 
-
-/**
- * The QueryPlanBuilder class is responsible for building the query plan based on the query
- * Input: Select object
- * Output: Query plan represented as an operator tree ready to be executed
- */
-
 public class QueryPlanBuilder {
-    //private Select select = null;
-    //private PlainSelect plainSelect = null;
 
-
-    // Method to build the query plan based on the query -suitable query plan
     public static Operator buildQueryPlan(Statement statement) throws Exception {
 
         // Create a select
         Select select = (Select) statement;
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
 
-
         boolean projection = false;
         boolean selection = false;
+        boolean join = false;
 
         Operator rootOperator = null;
 
-        //PlainSelect plainSelect = (PlainSelect) ((Select) statement).getSelectBody();
-        //PlainSelect plainSelect = (PlainSelect) this.select.getSelectBody();
+        //Identifying elements of the query
 
         String tableName = plainSelect.getFromItem().toString();
         Expression conditionExpression = plainSelect.getWhere();
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
+        List<?> joins = plainSelect.getJoins();
         //List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
 
-        if (selectItems.size() > 1 ) {
-            projection = true;
-        } else {
+        // Building the tree
+
+        // Review the tree of operators
+        if (selectItems.size() >= 1){
             if (selectItems.get(0).getExpression() instanceof AllColumns) {
                 projection = false;
             } else {
@@ -59,7 +47,11 @@ public class QueryPlanBuilder {
         }
 
         if (conditionExpression != null) {
+            // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
             selection = true;
+        }
+        if (joins != null) {
+            join = true;
         }
 
         // Organising the tree of operators
@@ -71,16 +63,17 @@ public class QueryPlanBuilder {
             Operator selectOperator = new SelectOperator(rootOperator, conditionExpression);
             rootOperator = selectOperator;
         }
+        if (join) {
+            // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
+        }
+
+        // Be carefull projection, that affect joins, selection conditions afterwards
         if (projection) {
             Operator projectOperator = new ProjectOperator(rootOperator, selectItems);
             rootOperator = projectOperator;
         }
-
-
-
-        //Operator selectOperator = new SelectOperator(scanOperator, conditionExpression);
-        //Operator projectOperator = new ProjectOperator(selectOperator, selectItems);
-
         return rootOperator;
     }
+
+
 }
