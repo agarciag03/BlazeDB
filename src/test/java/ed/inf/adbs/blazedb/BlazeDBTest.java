@@ -15,13 +15,7 @@ import java.util.List;
  */
 public class BlazeDBTest {
 
-	/**z
-	 * Rigorous Test :-)
-	 */
-	@Test
-	public void shouldAnswerWithTrue() {
-		assertTrue(true);
-	}
+	// Test end-to-end execution of BlazeDB using the provided sample input and expected output files
 
 	@Test
 	public void query1Test() throws Exception {
