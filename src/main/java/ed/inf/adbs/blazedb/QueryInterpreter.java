@@ -12,6 +12,7 @@ import java.io.IOException;
 /**
  * The QueryInterpreter class is responsible for interpreting the SQL query reading the statement from the query file
  */
+
 public class QueryInterpreter {
 
     public static void interpretQuery(String databaseDir, String inputFile, String outputFile) throws Exception {
@@ -23,9 +24,13 @@ public class QueryInterpreter {
         Operator rootOperator = QueryPlanBuilder.buildQueryPlan(select);
         execute(rootOperator, outputFile);
 
-
     }
-    // Method to parse the SQL query - Catch any problem at parsing time
+
+    // Method to parse the SQL query - Catch any problem at parsing time - Review Exceptions
+    /**
+     * Example method for getting started with JSQLParser. Reads SQL statement
+     * from a file or a string and prints the SELECT and WHERE clauses to screen.
+     */
     private static Statement parsingSQL(String inputFile) throws Exception {
         try {
             Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
@@ -53,6 +58,13 @@ public class QueryInterpreter {
         }
     }
 
+    /**
+     * Executes the provided query plan by repeatedly calling `getNextTuple()`
+     * on the root object of the operator tree. Writes the result to `outputFile`.
+     *
+     * @param root The root operator of the operator tree (assumed to be non-null).
+     * @param outputFile The name of the file where the result will be written.
+     */
     public static void execute(Operator root, String outputFile) throws Exception {
         try {
             // Create a BufferedWriter

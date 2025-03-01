@@ -76,5 +76,16 @@ public class BlazeDBTest {
 		assertEquals(expected, result);
 	}
 
+	// Different cases
+//	@Test
+//	public void queryExample() throws Exception {
+//		BlazeDB.main(new String[] {"samples/db", "samples/input/example.sql", "samples/output/output.csv"});
+//
+//		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+//		List<String> expected = Arrays.asList("50");
+//
+//		assertEquals(expected, result);
+//	}
+
 
 }
