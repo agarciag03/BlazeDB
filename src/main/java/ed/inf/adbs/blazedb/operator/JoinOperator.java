@@ -52,9 +52,9 @@ public class JoinOperator extends Operator{
     }
 
     private boolean evaluateJoinCondition(Tuple leftTuple, Tuple rightTuple) {
-        return true;
-        //JoinConditionEvaluator joinConditionEvaluator = new JoinConditionEvaluator(joinCondition);
-        //return joinConditionEvaluator.evaluate(leftTuple, rightTuple);
+        //return true;
+        JoinConditionEvaluator joinConditionEvaluator = new JoinConditionEvaluator(joinCondition);
+        return joinConditionEvaluator.evaluate(leftTuple, rightTuple);
 //        ConditionEvaluator conditionEvaluator = new ConditionEvaluator(joinCondition);
 //        return conditionEvaluator.evaluate(tuple);
     }
