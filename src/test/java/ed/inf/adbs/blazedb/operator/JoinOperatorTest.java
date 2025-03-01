@@ -19,14 +19,18 @@ public class JoinOperatorTest {
 
     @Before
     public void setUp() {
+
+
         Tuple tuple1 = new Tuple("1, 2");
         Tuple tuple2 = new Tuple("3, 4");
+        List<Tuple> leftTuples = Arrays.asList(tuple1, tuple2);
         Tuple tuple3 = new Tuple("5, 6");
         Tuple tuple4 = new Tuple("7, 8");
+        List<Tuple> rightTuples = Arrays.asList(tuple3, tuple4);
 
 
-        leftChild = new DummyOperator(tuple1, tuple2);
-        rightChild = new DummyOperator(tuple3, tuple4);
+        leftChild = new DummyOperator(leftTuples);
+        rightChild = new DummyOperator(rightTuples);
         joinCondition = null; // or set an appropriate join condition
         joinOperator = new JoinOperator(leftChild, rightChild, joinCondition);
     }

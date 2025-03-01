@@ -1,6 +1,8 @@
 package ed.inf.adbs.blazedb;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
@@ -70,5 +72,20 @@ public class Tuple {
         return values.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
+    }
+
+    // Adjusting the hashing function to return unique values
+    @Override
+    public int hashCode() {
+       return Objects.hash(values);
+    }
+
+    //Overwrite to compare the values of the tuples for hashing
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tuple tuple = (Tuple) o;
+        return Objects.equals(values, tuple.values);
     }
 }

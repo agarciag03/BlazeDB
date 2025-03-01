@@ -10,8 +10,8 @@ public class DummyOperator extends Operator {
     private List<Tuple> tuples;
     private int index;
 
-    public DummyOperator(Tuple... tuples) {
-        this.tuples = Arrays.asList(tuples);
+    public DummyOperator(List<Tuple> tuples) {
+        this.tuples = tuples;
         this.index = 0;
     }
 

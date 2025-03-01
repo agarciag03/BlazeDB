@@ -23,6 +23,7 @@ public class QueryPlanBuilder {
         boolean projection = false;
         boolean selection = false;
         boolean join = false;
+        boolean distinct = false;
         Operator rootOperator = null;
 
         //Identifying elements of the query
@@ -32,6 +33,7 @@ public class QueryPlanBuilder {
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         List<?> joins = plainSelect.getJoins();
         //List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
+
 
         // Building the tree
 
@@ -43,9 +45,11 @@ public class QueryPlanBuilder {
 //                projection = true;
 //            }
 //        }
+        // Identifying the element in the query
+        distinct = plainSelect.getDistinct() != null;
 
         if (selectItems.size() > 1 || !(selectItems.get(0).getExpression() instanceof AllColumns)) {
-            projection = true;
+                projection = true;
         }
 
         // Check that selection is not a join condition using binary expression
@@ -100,6 +104,11 @@ public class QueryPlanBuilder {
         if (projection) {
             Operator projectOperator = new ProjectOperator(rootOperator, selectItems);
             rootOperator = projectOperator;
+        }
+
+        if (distinct) {
+            Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
+            rootOperator = distinctOperator;
         }
         return rootOperator;
     }
