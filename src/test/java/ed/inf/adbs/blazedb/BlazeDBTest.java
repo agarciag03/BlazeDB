@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,9 +25,9 @@ public class BlazeDBTest {
 
 	@Test
 	public void query1Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query1.sql", "samples/output/query1.txt"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query1.sql", "samples/output/output.csv"});
 
-		List<String> result = Files.readAllLines(Paths.get("samples/output/query1.txt"));
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query1.csv"));
 
 		assertEquals(expected, result);
@@ -34,9 +35,9 @@ public class BlazeDBTest {
 
 	@Test
 	public void query2Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query2.sql", "samples/output/query2.txt"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query2.sql", "samples/output/output.csv"});
 
-		List<String> result = Files.readAllLines(Paths.get("samples/output/query2.txt"));
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query2.csv"));
 
 		assertEquals(expected, result);
@@ -44,9 +45,9 @@ public class BlazeDBTest {
 
 	@Test
 	public void query3Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query3.sql", "samples/output/query3.txt"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query3.sql", "samples/output/output.csv"});
 
-		List<String> result = Files.readAllLines(Paths.get("samples/output/query3.txt"));
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query3.csv"));
 
 		assertEquals(expected, result);
@@ -54,9 +55,9 @@ public class BlazeDBTest {
 
 	@Test
 	public void query4Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query4.sql", "samples/output/query4.txt"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query4.sql", "samples/output/output.csv"});
 
-		List<String> result = Files.readAllLines(Paths.get("samples/output/query4.txt"));
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query4.csv"));
 
 		assertEquals(expected, result);
@@ -67,10 +68,10 @@ public class BlazeDBTest {
 	// New case: Projections and selection at the same time
 	@Test
 	public void query13Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query13.sql", "samples/output/query13.txt"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query13.sql", "samples/output/output.csv"});
 
-		List<String> result = Files.readAllLines(Paths.get("samples/output/query13.txt"));
-		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query13.csv"));
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList("50");
 
 		assertEquals(expected, result);
 	}
