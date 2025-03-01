@@ -30,12 +30,28 @@ public class Tuple {
         return values.get(index);
     }
 
+    public List<Integer> getValues() {
+        return values;
+    }
+
     public Integer deleteValue(int index) {
         return values.remove(index);
     }
 
     public void addValue(int value) {
         values.add(value);
+    }
+
+    public void addValues(List<Integer> values) {
+        this.values.addAll(values);
+    }
+
+    // Join two tuples
+    public Tuple join(Tuple tuple) {
+        Tuple joinedTuple = new Tuple();
+        joinedTuple.addValues(this.values);
+        joinedTuple.addValues(tuple.getValues());
+        return joinedTuple;
     }
 
     public Integer size() {

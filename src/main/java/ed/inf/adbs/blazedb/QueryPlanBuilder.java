@@ -1,10 +1,9 @@
 package ed.inf.adbs.blazedb;
 
-import ed.inf.adbs.blazedb.operator.Operator;
-import ed.inf.adbs.blazedb.operator.ProjectOperator;
-import ed.inf.adbs.blazedb.operator.ScanOperator;
-import ed.inf.adbs.blazedb.operator.SelectOperator;
+import ed.inf.adbs.blazedb.operator.*;
+import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -24,7 +23,6 @@ public class QueryPlanBuilder {
         boolean projection = false;
         boolean selection = false;
         boolean join = false;
-
         Operator rootOperator = null;
 
         //Identifying elements of the query
@@ -38,17 +36,39 @@ public class QueryPlanBuilder {
         // Building the tree
 
         // Review the tree of operators
-        if (selectItems.size() >= 1){
-            if (selectItems.get(0).getExpression() instanceof AllColumns) {
-                projection = false;
-            } else {
-                projection = true;
-            }
+//        if (selectItems.size() >= 1){
+//            if (selectItems.get(0).getExpression() instanceof AllColumns) {
+//                projection = false;
+//            } else {
+//                projection = true;
+//            }
+//        }
+
+        if (selectItems.size() > 1 || !(selectItems.get(0).getExpression() instanceof AllColumns)) {
+            projection = true;
         }
 
+        // Check that selection is not a join condition using binary expression
         if (conditionExpression != null) {
-            // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
             selection = true;
+            if (conditionExpression instanceof BinaryExpression) {
+                BinaryExpression binaryExpression = (BinaryExpression) conditionExpression;
+                if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
+                    Column leftColumn = (Column) binaryExpression.getLeftExpression();
+                    Column rightColumn = (Column) binaryExpression.getRightExpression();
+                    if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
+                        String leftTableName = leftColumn.getTable().getName();
+                        String rightTableName = rightColumn.getTable().getName();
+                        if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
+                            // Hay una tabla en la cláusula WHERE
+                            selection = false;
+                            join = true;
+                        }
+                    }
+                }
+            }
+            // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
+
         }
         if (joins != null) {
             join = true;
@@ -60,10 +80,19 @@ public class QueryPlanBuilder {
 
         if (selection) {
             // review later that I can fix this operators I need to find a way to optimise them
+            // Check that selection is not a join condition using binary expression
+
+
             Operator selectOperator = new SelectOperator(rootOperator, conditionExpression);
             rootOperator = selectOperator;
         }
         if (join) {
+            for (Object joinItem : joins) {
+                String joinTableName = joinItem.toString();
+                Operator joinScanOperator = new ScanOperator(joinTableName);
+                Expression joinCondition = conditionExpression; // Simplified for this example
+                rootOperator = new JoinOperator(rootOperator, joinScanOperator, joinCondition);
+            }
             // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
         }
 
