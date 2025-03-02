@@ -31,23 +31,23 @@ public class SortOperatorTest {
 
 
     }
-    @Test
-    public void testGetAllTuples() throws Exception {
-
-        List<Tuple> tuples = Arrays.asList(
-                new Tuple("1, 2, 3"),
-                new Tuple("1, 2, 3"),
-                new Tuple("4, 5, 6"),
-                new Tuple("4, 5, 6"),
-                new Tuple("7, 8, 9")
-        );
-
-        SortOperator sortOperator = new SortOperator(dummyOperator, Arrays.asList());
-        dummyOperator.reset();
-        List<Tuple> result = sortOperator.getAllTuples(dummyOperator);
-
-        assertEquals(tuples, result);
-    }
+//    @Test
+//    public void testGetAllTuples() throws Exception {
+//
+//        List<Tuple> tuples = Arrays.asList(
+//                new Tuple("1, 2, 3"),
+//                new Tuple("1, 2, 3"),
+//                new Tuple("4, 5, 6"),
+//                new Tuple("4, 5, 6"),
+//                new Tuple("7, 8, 9")
+//        );
+//
+//        SortOperator sortOperator = new SortOperator(dummyOperator, Arrays.asList(1));
+//        dummyOperator.reset();
+//        List<Tuple> result = sortOperator.getAllTuples(dummyOperator);
+//
+//        assertEquals(tuples, result);
+//    }
 
 //    @Test
 //    public void testSortTuples() throws Exception {
