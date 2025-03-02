@@ -5,12 +5,12 @@ import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
-import net.sf.jsqlparser.statement.select.AllColumns;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.statement.select.*;
 
+import java.util.Arrays;
 import java.util.List;
+
+
 
 public class QueryPlanBuilder {
 
@@ -24,6 +24,7 @@ public class QueryPlanBuilder {
         boolean selection = false;
         boolean join = false;
         boolean distinct = false;
+        boolean orderBy = false;
         Operator rootOperator = null;
 
         //Identifying elements of the query
@@ -32,6 +33,7 @@ public class QueryPlanBuilder {
         Expression conditionExpression = plainSelect.getWhere();
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         List<?> joins = plainSelect.getJoins();
+        List<?> orderByElements = plainSelect.getOrderByElements();
         //List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
 
 
@@ -78,6 +80,10 @@ public class QueryPlanBuilder {
             join = true;
         }
 
+        if (orderByElements != null) {
+            orderBy = true;
+        }
+
         // Organising the tree of operators
         Operator scanOperator = new ScanOperator(tableName);
         rootOperator = scanOperator;
@@ -109,6 +115,31 @@ public class QueryPlanBuilder {
         if (distinct) {
             Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
             rootOperator = distinctOperator;
+        }
+
+        List<Integer> orderByColumn = null;
+        if (orderBy) {
+            for (Object orderByElement : orderByElements) {
+                if (orderByElement instanceof OrderByElement) {
+                    OrderByElement element = (OrderByElement) orderByElement;
+                    if (element.getExpression() instanceof Column) {
+                        Column column = (Column) element.getExpression();
+                        String table = column.getTable().getName();
+                        String columnName = column.getColumnName();
+                        int indexColumn = Catalog.getInstance().getColumnIndex(table, columnName);
+                        //adding the indexColumn to the list
+                        if (orderByColumn == null) {
+                            orderByColumn = orderByColumn = Arrays.asList(indexColumn);
+                        } else {
+                            orderByColumn.add(indexColumn);
+                        }
+
+                        System.out.println("Order by column: " + table + "." + columnName + " " + indexColumn);
+                    }
+                }
+            }
+            Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
+            rootOperator = orderByOperator;
         }
         return rootOperator;
     }

@@ -34,6 +34,7 @@ public class QueryInterpreter {
     private static Statement parsingSQL(String inputFile) throws Exception {
         try {
             Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
+            System.out.println(inputFile + ": " + statement);
             //Statement statement = CCJSqlParserUtil.parse("SELECT Student.A  FROM Student WHERE Student.A = 1");
 //            PlainSelect plainSelect = null;
 //
