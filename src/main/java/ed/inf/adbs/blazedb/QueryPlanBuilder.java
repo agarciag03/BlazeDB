@@ -3,10 +3,13 @@ package ed.inf.adbs.blazedb;
 import ed.inf.adbs.blazedb.operator.*;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,6 +28,8 @@ public class QueryPlanBuilder {
         boolean join = false;
         boolean distinct = false;
         boolean orderBy = false;
+        boolean groupBy = false;
+        boolean sum = false;
         Operator rootOperator = null;
 
         //Identifying elements of the query
@@ -35,24 +40,75 @@ public class QueryPlanBuilder {
         List<?> joins = plainSelect.getJoins();
         List<?> orderByElements = plainSelect.getOrderByElements();
         //List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
+        //List<Expression> groupByExpressions = plainSelect.getGroupBy().;
+        GroupByElement groupByElements = plainSelect.getGroupBy();
 
 
         // Building the tree
 
-        // Review the tree of operators
-//        if (selectItems.size() >= 1){
-//            if (selectItems.get(0).getExpression() instanceof AllColumns) {
-//                projection = false;
-//            } else {
-//                projection = true;
+        if (groupByElements != null) {
+            groupBy = true;
+        }
+
+
+        // Select the columns for projections and for sum
+//        ExpressionList sumExpressionList;
+//        List<Function> sumExpressions = new ArrayList<>();
+
+//        for (SelectItem selectItem : selectItems) {
+//            if (selectItem.getExpression() instanceof Function) {
+//                Function function = (Function) selectItem.getExpression();
+//                if (function.getName().equals("SUM")) {
+//                    sum = true;
+//                    sumExpressionList = function.getParameters();
+//                    sumExpressions.add(function);
+//                }
 //            }
 //        }
+
+        /// //
+
+        ExpressionList sumExpressionList;
+        List<Function> sumExpressions = new ArrayList<>();
+        List<SelectItem> projectionItems = new ArrayList<>();
+        for (SelectItem selectItem : plainSelect.getSelectItems()) {
+            if (selectItem.getExpression() instanceof AllColumns) {
+                System.out.println("  - All columns");
+                projection = false; // No need to project if all columns are selected
+
+            } else if (selectItem.getExpression() instanceof Function) {
+                Function function = (Function) selectItem.getExpression();
+                if (function.getName().equalsIgnoreCase("SUM")) {
+                    sum = true;
+                    sumExpressionList = function.getParameters();
+                    sumExpressions.add(function);
+                    //ExpressionList params = function.getParameters();
+                    System.out.println("  - Función SUM detectada en la columna: " + function.getParameters());
+
+                }
+            } else if (selectItem.getExpression() instanceof Column) {
+                System.out.println(" projection " + selectItem);
+                projectionItems.add(selectItem);
+                projection = true;
+            } else {
+                System.out.println(" This select function is not allowed: " + selectItem);
+            }
+        }
+
+
+
+
+
+//
         // Identifying the element in the query
         distinct = plainSelect.getDistinct() != null;
 
-        if (selectItems.size() > 1 || !(selectItems.get(0).getExpression() instanceof AllColumns)) {
-                projection = true;
+        if (projectionItems.size() != 0) {
+            projection = true;
         }
+//        if (selectItems.size() > 1 || !(selectItems.get(0).getExpression() instanceof AllColumns)) {
+//                projection = true;
+//        }
 
         // Check that selection is not a join condition using binary expression
         if (conditionExpression != null) {
@@ -83,6 +139,12 @@ public class QueryPlanBuilder {
         if (orderByElements != null) {
             orderBy = true;
         }
+ /// ///////////////
+ /// /////////////// /// /////////////// /// /////////////// /// ///////////////
+ /// ///////////////
+ /// /////////////// /// /////////////// /// /////////////// /// ///////////////
+ /// ///////////////
+ /// /////////////// /// /////////////// /// /////////////// /// ///////////////
 
         // Organising the tree of operators
         Operator scanOperator = new ScanOperator(tableName);
@@ -92,14 +154,13 @@ public class QueryPlanBuilder {
             // review later that I can fix this operators I need to find a way to optimise them
             // Check that selection is not a join condition using binary expression
 
-
             Operator selectOperator = new SelectOperator(rootOperator, conditionExpression);
             rootOperator = selectOperator;
         }
         if (join) {
             for (Object joinItem : joins) {
-                String joinTableName = joinItem.toString();
-                Operator joinScanOperator = new ScanOperator(joinTableName);
+                String rightTableName = joinItem.toString();
+                Operator joinScanOperator = new ScanOperator(rightTableName);
                 Expression joinCondition = conditionExpression; // Simplified for this example
                 rootOperator = new JoinOperator(rootOperator, joinScanOperator, joinCondition);
             }
@@ -108,7 +169,7 @@ public class QueryPlanBuilder {
 
         // Be carefull projection, that affect joins, selection conditions afterwards
         if (projection) {
-            Operator projectOperator = new ProjectOperator(rootOperator, selectItems);
+            Operator projectOperator = new ProjectOperator(rootOperator, projectionItems);
             rootOperator = projectOperator;
         }
 

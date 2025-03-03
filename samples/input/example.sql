@@ -1,1 +1,1 @@
-SELECT * FROM Student, Enrolled WHERE Student.A = Enrolled.A;
+SELECT *  FROM Student, Enrolled WHERE Student.A = Enrolled.A;

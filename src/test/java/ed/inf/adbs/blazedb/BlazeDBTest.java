@@ -68,6 +68,16 @@ public class BlazeDBTest {
 	}
 
 	@Test
+	public void query6Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query6.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query6.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
 	public void query7Test() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input/query7.sql", "samples/output/output.csv"});
 
@@ -83,6 +93,46 @@ public class BlazeDBTest {
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query8.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query9Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query9.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query9.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query10Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query10.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query10.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query11Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query11.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query11.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query12Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query12.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query12.csv"));
 
 		assertEquals(expected, result);
 	}
