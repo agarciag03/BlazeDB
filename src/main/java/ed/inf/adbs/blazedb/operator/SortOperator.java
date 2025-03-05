@@ -75,7 +75,6 @@ public class SortOperator extends Operator{
 
     @Override
     public Tuple getNextTuple() throws Exception {
-
         // Return the next tuple from the sorted list
         if (index < sortedTuples.size()) {
             return sortedTuples.get(index++);

@@ -13,14 +13,33 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.sf.jsqlparser.parser.feature.Feature.distinct;
 
 
 public class QueryPlanBuilder {
 
+    //This method is responsible for parsing the SQL Query and identify all the elements of the query to build the query plan
+    public static void parsingSQL(Statement statement) {
+        Select select = (Select) statement; // Statement is always a Select
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
+
+        List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
+        String fromTable = plainSelect.getFromItem().toString(); //the first table in the FROM clause
+        //ArrayList <?> joins = (ArrayList<?>) plainSelect.getJoins(); //the remaining tables in joins
+        List<Join> joins = plainSelect.getJoins();
+        Expression whereExpression = plainSelect.getWhere(); //the condition in the WHERE clause
+        Distinct distinct = plainSelect.getDistinct();
+        List<OrderByElement> orderByElements = plainSelect.getOrderByElements();
+        GroupByElement groupByElements = plainSelect.getGroupBy();
+
+
+    }
     public static Operator buildQueryPlan(Statement statement) throws Exception {
 
+        parsingSQL(statement);
         // Create a select
-        Select select = (Select) statement;
+        Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
 
         boolean projection = false;
