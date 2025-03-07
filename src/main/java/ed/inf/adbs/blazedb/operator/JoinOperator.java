@@ -1,7 +1,10 @@
 package ed.inf.adbs.blazedb.operator;
 
+import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
+import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.schema.Column;
 
 public class JoinOperator extends Operator{
     private Operator leftChild;
@@ -52,10 +55,26 @@ public class JoinOperator extends Operator{
     }
 
     private boolean evaluateJoinCondition(Tuple leftTuple, Tuple rightTuple) {
-        //return true;
-        JoinConditionEvaluator joinConditionEvaluator = new JoinConditionEvaluator(joinCondition);
-        return joinConditionEvaluator.evaluate(leftTuple, rightTuple);
-//        ConditionEvaluator conditionEvaluator = new ConditionEvaluator(joinCondition);
-//        return conditionEvaluator.evaluate(tuple);
+        BinaryExpression binaryExpression = (BinaryExpression) joinCondition;
+
+        // extract the rightside value to become it as a selection operator
+
+        ConditionEvaluator conditionEvaluator = new ConditionEvaluator(joinCondition);
+        int rightValue = evaluateExpressionValue(binaryExpression.getRightExpression());
+        return conditionEvaluator.evaluateJoin(leftTuple, binaryExpression, rightValue);
+    }
+
+    private int evaluateExpressionValue(Expression expression) {
+        if (expression instanceof Column) {
+            Column column = (Column) expression;
+            Catalog catalog = Catalog.getInstance();
+            String tableName = column.getTable().getName();
+            String columnName = column.getColumnName();
+            int columnIndex = catalog.getColumnIndex(tableName, columnName);
+            return rightTuple.getValue(columnIndex);
+        } else {
+            // if longValue
+            return Integer.parseInt(expression.toString());
+        }
     }
 }

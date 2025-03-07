@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -64,6 +65,11 @@ public class BlazeDBTest {
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query5.csv"));
 
+		// We add this code to check results without considering the order of the tuples.
+		Collections.sort(result);
+		Collections.sort(expected);
+
+		// Comparar las listas ordenadas
 		assertEquals(expected, result);
 	}
 

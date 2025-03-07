@@ -23,6 +23,11 @@ public class ConditionEvaluator extends ExpressionDeParser {
         return evaluateExpression(condition);
     }
 
+    public boolean evaluateJoin(Tuple tuple, BinaryExpression binaryExpression, int rightValue) {
+        this.tuple = tuple;
+        return evaluateJoinExpression(binaryExpression, rightValue);
+    }
+
     private boolean evaluateExpression(Expression expression) {
         if (expression instanceof AndExpression) {
             AndExpression andExpr = (AndExpression) expression;
@@ -52,6 +57,25 @@ public class ConditionEvaluator extends ExpressionDeParser {
         } else if (binaryExpression instanceof MinorThanEquals) {
             result = leftvalue <= rightValue;
         }
+    }
+
+    public boolean evaluateJoinExpression(BinaryExpression binaryExpression, int rightValue) {
+        int leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression()); // only integers
+
+        if (binaryExpression instanceof EqualsTo) {
+            result = leftvalue == rightValue;
+        } else if (binaryExpression instanceof NotEqualsTo) {
+            result = leftvalue != rightValue;
+        } else if (binaryExpression instanceof GreaterThan) {
+            result = leftvalue > rightValue;
+        } else if (binaryExpression instanceof GreaterThanEquals) {
+            result = leftvalue >= rightValue;
+        } else if (binaryExpression instanceof MinorThan) {
+            result = leftvalue < rightValue;
+        } else if (binaryExpression instanceof MinorThanEquals) {
+            result = leftvalue <= rightValue;
+        }
+        return result;
     }
 
     // extract values from columns: two types columns or longValues

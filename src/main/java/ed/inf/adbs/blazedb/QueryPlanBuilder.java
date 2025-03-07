@@ -115,6 +115,7 @@ public class QueryPlanBuilder {
         Expression conditionExpression = plainSelect.getWhere();
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         List<?> joins = plainSelect.getJoins();
+        Expression joinConditions = null;
         List<?> orderByElements = plainSelect.getOrderByElements();
         //List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
         //List<Expression> groupByExpressions = plainSelect.getGroupBy().;
@@ -143,7 +144,7 @@ public class QueryPlanBuilder {
 //            }
 //        }
 
-        /// //
+        /// // identifying sums, projections and allcolumns
 
         ExpressionList sumExpressionList;
         List<Function> sumExpressions = new ArrayList<>();
@@ -188,6 +189,8 @@ public class QueryPlanBuilder {
 //        }
 
         // Check that selection is not a join condition using binary expression
+        // Identifying joins and selections
+
         if (conditionExpression != null) {
             selection = true;
             if (conditionExpression instanceof BinaryExpression) {
@@ -207,7 +210,9 @@ public class QueryPlanBuilder {
                         if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
                             // Hay una tabla en la cláusula WHERE
                             selection = false;
+                            joinConditions = conditionExpression;
                             join = true;
+
                         } else {
                             selection = true;
                         }
@@ -246,7 +251,7 @@ public class QueryPlanBuilder {
             for (Object joinItem : joins) {
                 String rightTableName = joinItem.toString();
                 Operator joinScanOperator = new ScanOperator(rightTableName);
-                Expression joinCondition = conditionExpression; // Simplified for this example
+                Expression joinCondition = joinConditions; // Simplified for this example
                 rootOperator = new JoinOperator(rootOperator, joinScanOperator, joinCondition);
             }
             // Add binarytree to identify the elements of the conditions are tables and are differents to identify a joincondition
