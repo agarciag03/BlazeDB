@@ -169,16 +169,27 @@ public class BlazeDBTest {
 		assertEquals(expected, result);
 	}
 
+	@Test
+	public void query15Test() throws Exception {
+		System.out.println("Cross product - between 3 tables: ");
+		BlazeDB.main(new String[] {"samples/db", "samples/input/query15.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query15.csv"));
+
+		assertEquals(expected, result);
+	}
+
 	// Different cases
-//	@Test
-//	public void queryExample() throws Exception {
-//		BlazeDB.main(new String[] {"samples/db", "samples/input/example.sql", "samples/output/output.csv"});
-//
-//		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
-//		List<String> expected = Arrays.asList("50");
-//
-//		assertEquals(expected, result);
-//	}
+	@Test
+	public void queryExample() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input/example.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList("50");
+
+		assertEquals(expected, result);
+	}
 
 
 }
