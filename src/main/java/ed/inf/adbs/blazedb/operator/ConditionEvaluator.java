@@ -20,160 +20,84 @@ public class ConditionEvaluator extends ExpressionDeParser {
 
     public boolean evaluate(Tuple tuple) {
         this.tuple = tuple;
-        return evaluateExpression(condition, tuple);
+        return evaluateExpression(condition);
     }
 
-    // Recurrent function to evaluate the expression with  many ANDs
-    private boolean evaluateExpression(Expression expression, Tuple tuple) {
-        this.tuple = tuple;
+    private boolean evaluateExpression(Expression expression) {
         if (expression instanceof AndExpression) {
-            AndExpression andExpression = (AndExpression) expression;
-            return evaluateExpression(andExpression.getLeftExpression(), tuple) &&
-                    evaluateExpression(andExpression.getRightExpression(), tuple);
+            AndExpression andExpr = (AndExpression) expression;
+            return evaluateExpression(andExpr.getLeftExpression()) &&
+                    evaluateExpression(andExpr.getRightExpression());
         } else {
             expression.accept(this);
             return result;
         }
     }
 
-    /*
-    public boolean evaluate(Tuple tuple) {
-        boolean result = false;
-        if (condition instanceof AndExpression) {
-            AndExpression andExpression = (AndExpression) condition;
-            while (andExpression.getLeftExpression() != null && andExpression.getRightExpression() != null) {
-                return result && evaluateAndExpression(andExpression, tuple);
-            }
-//            boolean evaluateLeftExpressionExpression = evaluateExpression(andExpression.getLeftExpression(), tuple);
-//            boolean evaluateRightExpression = evaluateExpression(andExpression.getRightExpression(), tuple);
-//            //return evaluateExpression(andExpression.getLeftExpression(), tuple) && evaluateExpression(andExpression.getRightExpression(), tuple);
-//            return evaluateLeftExpressionExpression && evaluateRightExpression;
+    // method for comparisons
+    private void evaluateBinaryExpression(BinaryExpression binaryExpression) {
+        int leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression()); // only integers
+        int rightValue = evaluateExpressionValue(binaryExpression.getRightExpression());
+
+        if (binaryExpression instanceof EqualsTo) {
+            result = leftvalue == rightValue;
+        } else if (binaryExpression instanceof NotEqualsTo) {
+            result = leftvalue != rightValue;
+        } else if (binaryExpression instanceof GreaterThan) {
+            result = leftvalue > rightValue;
+        } else if (binaryExpression instanceof GreaterThanEquals) {
+            result = leftvalue >= rightValue;
+        } else if (binaryExpression instanceof MinorThan) {
+            result = leftvalue < rightValue;
+        } else if (binaryExpression instanceof MinorThanEquals) {
+            result = leftvalue <= rightValue;
         }
-        else {
-            return evaluateExpression(condition, tuple);
+    }
+
+    // extract values from columns: two types columns or longValues
+    private int evaluateExpressionValue(Expression expression) {
+        if (expression instanceof Column) {
+            Column column = (Column) expression;
+            Catalog catalog = Catalog.getInstance();
+            String tableName = column.getTable().getName();
+            String columnName = column.getColumnName();
+            int columnIndex = catalog.getColumnIndex(tableName, columnName);
+            return tuple.getValue(columnIndex);
+        } else {
+            // if longValue
+            return Integer.parseInt(expression.toString());
         }
-//        this.tuple = tuple;
-//        condition.accept(this);
-//        return result;
     }
 
-
-
-    private boolean evaluateAndExpression(AndExpression andExpression, Tuple tuple) {
-        boolean evaluateLeftExpressionExpression = evaluateExpression(andExpression.getLeftExpression(), tuple);
-        boolean evaluateRightExpression = evaluateExpression(andExpression.getRightExpression(), tuple);
-        return evaluateLeftExpressionExpression && evaluateRightExpression;
-    }
-
-    private boolean evaluateExpression(Expression expression, Tuple tuple) {
-        this.tuple = tuple;
-        expression.accept(this);
-        return result;
-//        if (expression instanceof EqualsTo){
-//
-//        } else if (expression instanceof NotEqualsTo){
-//
-//        } else if (expression instanceof GreaterThan){
-//
-//        } else if (expression instanceof GreaterThanEquals){
-//
-//        } else if (expression instanceof MinorThan){
-//
-//        } else if (expression instanceof MinorThanEquals){
-//
-//        } else if (expression instanceof Column){
-//
-//        }
-//        return false;
-    }
-*/
-
-//    @Override
-//    public void visit(EqualsTo equalsTo) {
-//        equalsTo.getLeftExpression().accept(this);
-//        int leftValue = Integer.parseInt(this.getBuffer().toString().trim());
-//        this.getBuffer().setLength(0); // Clear the buffer
-//
-//        equalsTo.getRightExpression().accept(this);
-//        int rightValue = Integer.parseInt(this.getBuffer().toString().trim());
-//        this.getBuffer().setLength(0); // Clear the buffer
-//
-//        result = leftValue == rightValue;
-//    }
-
+    // Methods visit for each type of expression
     @Override
     public void visit(EqualsTo equalsTo) {
-        evaluateBinaryExpression(equalsTo, "==");
+        evaluateBinaryExpression(equalsTo);
     }
 
     @Override
     public void visit(NotEqualsTo notEqualsTo) {
-        evaluateBinaryExpression(notEqualsTo, "!=");
+        evaluateBinaryExpression(notEqualsTo);
     }
 
     @Override
     public void visit(GreaterThan greaterThan) {
-        evaluateBinaryExpression(greaterThan, ">");
+        evaluateBinaryExpression(greaterThan);
     }
 
     @Override
     public void visit(GreaterThanEquals greaterThanEquals) {
-        evaluateBinaryExpression(greaterThanEquals, ">=");
+        evaluateBinaryExpression(greaterThanEquals);
     }
 
     @Override
     public void visit(MinorThan minorThan) {
-        evaluateBinaryExpression(minorThan, "<");
+        evaluateBinaryExpression(minorThan);
     }
 
     @Override
     public void visit(MinorThanEquals minorThanEquals) {
-        evaluateBinaryExpression(minorThanEquals, "<=");
-    }
-
-    // Review it better binary expression
-    private void evaluateBinaryExpression(BinaryExpression binaryExpression, String comparison) {
-        binaryExpression.getLeftExpression().accept(this);
-        int leftValue = Integer.parseInt(this.getBuffer().toString().trim());
-        this.getBuffer().setLength(0); // Clear the buffer
-
-        binaryExpression.getRightExpression().accept(this);
-        int rightValue = Integer.parseInt(this.getBuffer().toString().trim());
-        this.getBuffer().setLength(0); // Clear the buffer
-
-        switch (comparison) {
-            case "==":
-                result = leftValue == rightValue;
-                break;
-            case "!=":
-                result = leftValue != rightValue;
-                break;
-            case ">":
-                result = leftValue > rightValue;
-                break;
-            case ">=":
-                result = leftValue >= rightValue;
-                break;
-            case "<":
-                result = leftValue < rightValue;
-                break;
-            case "<=":
-                result = leftValue <= rightValue;
-                break;
-        }
-    }
-
-    @Override
-    public void visit(Column column) {
-        Catalog catalog = Catalog.getInstance(); // because of singleton pattern
-
-        String columnName = column.getColumnName();
-        String tableName = column.getTable().getName();
-        int columnIndex = catalog.getColumnIndex(tableName, columnName);
-
-        int columnValue = tuple.getValue(columnIndex);
-        this.getBuffer().append(columnValue);
-
+        evaluateBinaryExpression(minorThanEquals);
     }
 
 }

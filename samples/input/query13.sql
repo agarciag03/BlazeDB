@@ -1,1 +1,1 @@
-SELECT Student.C FROM Student WHERE Student.A = 1 AND Student.B = 200;
+SELECT Student.C FROM Student WHERE Student.A = 1 AND Student.B = 200 AND Student.C = 50 AND Student.D = 33;

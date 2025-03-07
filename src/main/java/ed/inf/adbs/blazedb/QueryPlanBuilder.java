@@ -18,26 +18,84 @@ import static net.sf.jsqlparser.parser.feature.Feature.distinct;
 
 public class QueryPlanBuilder {
 
+
     //This method is responsible for parsing the SQL Query and identify all the elements of the query to build the query plan
     public static void parsingSQL(Statement statement) {
+
         Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
-
+        OperatorIdentifier operatorIdentifier = new OperatorIdentifier();
 
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         String fromTable = plainSelect.getFromItem().toString(); //the first table in the FROM clause
         //ArrayList <?> joins = (ArrayList<?>) plainSelect.getJoins(); //the remaining tables in joins
         List<Join> joins = plainSelect.getJoins();
-        Expression whereExpression = plainSelect.getWhere(); //the condition in the WHERE clause
+        Expression whereExpressions = plainSelect.getWhere(); //the condition in the WHERE clause
         Distinct distinct = plainSelect.getDistinct();
         List<OrderByElement> orderByElements = plainSelect.getOrderByElements();
         GroupByElement groupByElements = plainSelect.getGroupBy();
 
+        // Select the columns for projections and for sum
+        List<Function> sumExpressions = new ArrayList<>();
+        List<SelectItem> projectionItems = new ArrayList<>();
+
+        // identifying AllColumns, projection Operator and SUM
+         for (SelectItem selectItem : selectItems) {
+             if (selectItem.getExpression() instanceof AllColumns) {
+                 System.out.println("SELECT *");
+                 operatorIdentifier.setProjection(false); // No need to project if all columns are selected
+
+             } else if (selectItem.getExpression() instanceof Function) {
+                 // sum is always instance as a Function
+                 Function function = (Function) selectItem.getExpression();
+                 if (function.getName().equalsIgnoreCase("SUM")) {
+                     operatorIdentifier.setSum(true);
+                     sumExpressions.add(function);
+                     System.out.println("SUM:  " + function.getParameters());
+                 }
+             } else if (selectItem.getExpression() instanceof Column) {
+                 // selectItem could be a number or a column
+                 projectionItems.add(selectItem);
+                 operatorIdentifier.setProjection(true);
+
+             }
+         }
+
+         // identifying the selection and joins
+        if (whereExpressions != null) {
+            operatorIdentifier.setSelection(true); // By default is a selection
+            // We need to identify AND to go deep in the tree
+//            if (whereExpressions instanceof BinaryExpression) {
+//                BinaryExpression binaryExpression = (BinaryExpression) whereExpressions;
+//                // Identify if both expressions are columns of different tables, if so, then it's a join condition
+//                if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
+//                    Column leftColumn = (Column) binaryExpression.getLeftExpression();
+//                    Column rightColumn = (Column) binaryExpression.getRightExpression();
+//
+//                    if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
+//                        String leftTableName = leftColumn.getTable().getName();
+//                        String rightTableName = rightColumn.getTable().getName();
+//
+//                        if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
+//                            operatorIdentifier.setJoin(true);
+//                            operatorIdentifier.setSelection(false); // because it is
+//                        }
+//                    }
+//                }
+
+//            }
+        }
+
+        // Identifying operators:
+        if (joins != null) {
+            operatorIdentifier.setJoin(true);
+        }
 
     }
+
     public static Operator buildQueryPlan(Statement statement) throws Exception {
 
-        parsingSQL(statement);
+        //parsingSQL(statement);
         // Create a select
         Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
@@ -134,16 +192,24 @@ public class QueryPlanBuilder {
             selection = true;
             if (conditionExpression instanceof BinaryExpression) {
                 BinaryExpression binaryExpression = (BinaryExpression) conditionExpression;
+
+                // Identify AND Expression with join? Piazza
+
+
                 if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
                     Column leftColumn = (Column) binaryExpression.getLeftExpression();
                     Column rightColumn = (Column) binaryExpression.getRightExpression();
+
                     if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
                         String leftTableName = leftColumn.getTable().getName();
                         String rightTableName = rightColumn.getTable().getName();
+
                         if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
                             // Hay una tabla en la cláusula WHERE
                             selection = false;
                             join = true;
+                        } else {
+                            selection = true;
                         }
                     }
                 }
@@ -221,6 +287,12 @@ public class QueryPlanBuilder {
             Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
             rootOperator = orderByOperator;
         }
+
+        if (sum) {
+           Operator sumOperator = new SumOperator(rootOperator, groupByElements, sumExpressions);
+            rootOperator = sumOperator;
+        }
+
         return rootOperator;
     }
 
