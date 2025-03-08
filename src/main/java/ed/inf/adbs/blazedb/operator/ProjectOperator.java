@@ -17,13 +17,16 @@ public class ProjectOperator extends Operator {
     private List<Integer> columnIndexes;
 
     // Constructor
-    public ProjectOperator(Operator child, List<SelectItem> selectItems) {
+    //public ProjectOperator(Operator child, List<SelectItem> selectItems) {
+
+    public ProjectOperator(Operator child, List<Expression> selectItems) {
         this.child = child;
         this.columnIndexes = new ArrayList<>();
 
         // Extract the column indexes from the select
-        for (SelectItem item : selectItems) {
-            Expression expression = item.getExpression();
+        //for (SelectItem item : selectItems) {
+        for (Expression expression : selectItems) {
+            //Expression expression = item.getExpression();
             if (expression != null) {
                 Column column = (Column) expression;
                 String tableName = column.getTable().getName();

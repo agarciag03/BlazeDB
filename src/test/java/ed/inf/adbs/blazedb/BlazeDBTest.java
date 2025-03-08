@@ -3,9 +3,11 @@ package ed.inf.adbs.blazedb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,6 +17,13 @@ import java.util.List;
  * Unit tests for BlazeDB.
  */
 public class BlazeDBTest {
+
+
+	@Before
+	public void cleanOutputFile() throws Exception {
+		Path outputFile = Paths.get("samples/output/output.csv");
+		Files.deleteIfExists(outputFile);
+	}
 
 	// Test end-to-end execution of BlazeDB using the provided sample input and expected output files
 

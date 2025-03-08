@@ -15,40 +15,34 @@ import java.io.IOException;
 
 public class QueryInterpreter {
 
+    /**
+     * Interprets the SQL query provided in the input file and writes the result to the output file.
+     *
+     * @param databaseDir The directory where the database files are stored.
+     * @param inputFile The name of the file containing the SQL query.
+     * @param outputFile The name of the file where the result will be written.
+     */
     public static void interpretQuery(String databaseDir, String inputFile, String outputFile) throws Exception {
+
         // Loading all table that we have in the schema
-        Catalog catalog = Catalog.getInstance(); // because of singleton pattern
+        Catalog catalog = Catalog.getInstance();
         catalog.loadSchema(databaseDir);
 
-        Statement select = parsingSQL(inputFile);
-        Operator rootOperator = QueryPlanBuilder.buildQueryPlan(select);
+        Statement statement = parsingSQL(inputFile);
+        QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
+        Operator rootOperator = queryPlanBuilder.buildQueryPlan(statement);
         execute(rootOperator, outputFile);
 
     }
 
-    // Method to parse the SQL query - Catch any problem at parsing time - Review Exceptions
     /**
-     * Example method for getting started with JSQLParser. Reads SQL statement
-     * from a file or a string and prints the SELECT and WHERE clauses to screen.
+     * Reads SQL statement from query file and parses it using the CCJSqlParserUtil.
+     * This method catches any exceptions that occur during parsing and prints an error message.
      */
     private static Statement parsingSQL(String inputFile) throws Exception {
         try {
             Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
             System.out.println(inputFile + ": " + statement);
-            //Statement statement = CCJSqlParserUtil.parse("SELECT Student.A  FROM Student WHERE Student.A = 1");
-//            PlainSelect plainSelect = null;
-//
-//            if (statement != null) {
-//                Select select = (Select) statement;
-//                plainSelect = (PlainSelect) select.getSelectBody();
-//
-//                System.out.println("Statement: " + select);
-////                System.out.println("SELECT items: " + select.getPlainSelect().getSelectItems());
-////                System.out.println("FROM clause: " + select.getPlainSelect().getFromItem());
-////                System.out.println("OTHER TABLES: " + select.getPlainSelect().getJoins());
-////                System.out.println("WHERE expression: " + select.getPlainSelect().getWhere());
-//
-//            }
 
             return statement;
 

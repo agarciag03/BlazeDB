@@ -14,89 +14,252 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.sf.jsqlparser.parser.feature.Feature.distinct;
-
-
 public class QueryPlanBuilder {
 
+    // Elements of the query
+    private String fromTable;
+    private List<Expression> projectionExpressions = new ArrayList<>();
+    private List<Function> sumExpressions = new ArrayList<>();
+    private List<Expression> joinConditions = new ArrayList<>();
+    private List<Expression> selectionConditions = new ArrayList<>();
+    private List<OrderByElement> orderByElements = new ArrayList<>();
+    private List<Expression> groupByElements = new ArrayList<>();
+    private Distinct distinctElement;
+    private List <Join> joinsElements = new ArrayList<>();
 
-    //This method is responsible for parsing the SQL Query and identify all the elements of the query to build the query plan
-    public static void parsingSQL(Statement statement) {
+    // Flags to identify the operators
+    private boolean projectionOperator = false;
+    private boolean selectionOperator = false;
+    private boolean joinOperator = false;
+    private boolean distinctOperator = false;
+    private boolean orderByOperator = false;
+    private boolean groupByOperator = false;
+    private boolean sumOperator = false;
+
+    /**
+     * This method is responsible of identifying all the elements and operators of the query to build the query plan
+     *
+     * @param statement
+     * @throws Exception
+     */
+
+    public void identifyElementsOperators(Statement statement) {
 
         Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
-        OperatorIdentifier operatorIdentifier = new OperatorIdentifier();
 
+        // 0. Identifying the table in the FROM clause
+        fromTable = plainSelect.getFromItem().toString();
+
+        // 1. identifying projection (or AllColumns) and SUM Operator
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
-        String fromTable = plainSelect.getFromItem().toString(); //the first table in the FROM clause
-        //ArrayList <?> joins = (ArrayList<?>) plainSelect.getJoins(); //the remaining tables in joins
-        List<Join> joins = plainSelect.getJoins();
-        Expression whereExpressions = plainSelect.getWhere(); //the condition in the WHERE clause
-        Distinct distinct = plainSelect.getDistinct();
-        List<OrderByElement> orderByElements = plainSelect.getOrderByElements();
-        GroupByElement groupByElements = plainSelect.getGroupBy();
-
-        // Select the columns for projections and for sum
-        List<Function> sumExpressions = new ArrayList<>();
-        List<SelectItem> projectionItems = new ArrayList<>();
-
-        // identifying AllColumns, projection Operator and SUM
         for (SelectItem selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllColumns) {
                 System.out.println("SELECT *");
-                operatorIdentifier.setProjection(false); // No need to project if all columns are selected
+                projectionOperator = false; // No need to project if all columns are selected
 
             } else if (selectItem.getExpression() instanceof Function) {
                 // sum is always instance as a Function
                 Function function = (Function) selectItem.getExpression();
                 if (function.getName().equalsIgnoreCase("SUM")) {
-                    operatorIdentifier.setSum(true);
                     sumExpressions.add(function);
+                    sumOperator = true;
                     System.out.println("SUM:  " + function.getParameters());
                 }
             } else if (selectItem.getExpression() instanceof Column) {
                 // selectItem could be a number or a column
-                projectionItems.add(selectItem);
-                operatorIdentifier.setProjection(true);
+                projectionExpressions.add(selectItem.getExpression());
+                projectionOperator = true;
+                System.out.println("SELECT:  " + selectItem.getExpression());
 
+            } else {
+                System.out.println(" This select function is not allowed: " + selectItem);
             }
         }
 
-        // identifying the selection and joins
+        // 2. Identifying the selections and joins operators
+        Expression whereExpressions = plainSelect.getWhere(); //the condition in the WHERE clause
         if (whereExpressions != null) {
-            operatorIdentifier.setSelection(true); // By default is a selection
-            // We need to identify AND to go deep in the tree
-//            if (whereExpressions instanceof BinaryExpression) {
-//                BinaryExpression binaryExpression = (BinaryExpression) whereExpressions;
-//                // Identify if both expressions are columns of different tables, if so, then it's a join condition
-//                if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
-//                    Column leftColumn = (Column) binaryExpression.getLeftExpression();
-//                    Column rightColumn = (Column) binaryExpression.getRightExpression();
-//
-//                    if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
-//                        String leftTableName = leftColumn.getTable().getName();
-//                        String rightTableName = rightColumn.getTable().getName();
-//
-//                        if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
-//                            operatorIdentifier.setJoin(true);
-//                            operatorIdentifier.setSelection(false); // because it is
-//                        }
-//                    }
-//                }
-
-//            }
+            // Here we need to identify the join conditions and selections going recursively into the AndExpression
+            while (whereExpressions instanceof AndExpression) {
+                AndExpression andExpr = (AndExpression) whereExpressions;
+                identifyWhereExpression(andExpr.getRightExpression());
+                whereExpressions = andExpr.getLeftExpression();
+            }
+            identifyWhereExpression(whereExpressions);
         }
 
-        // Identifying operators:
-        if (joins != null) {
-            operatorIdentifier.setJoin(true);
+        // 3. Identifying the joins operator without any condition
+        List<Join> joinsExpressions = plainSelect.getJoins();
+        if (joinsExpressions != null) {
+            System.out.println("JOIN: " + joinsExpressions);
+            joinsElements = joinsExpressions;
+        }
+
+        // 4. Identifying the order by
+        List <OrderByElement> orderbyExpressions =  plainSelect.getOrderByElements();
+        if (orderbyExpressions != null) {
+            System.out.println("ORDER BY: " + orderbyExpressions);
+            orderByElements = orderbyExpressions;
+        }
+
+        // 5. Identify the distinct operator
+        distinctElement = plainSelect.getDistinct();
+        System.out.println("DISTINCT: " + distinctElement);
+
+        // 6. Identify the group by operator
+       GroupByElement groupByExpressions = plainSelect.getGroupBy();
+        if (groupByExpressions != null) {
+            System.out.println("GROUP BY: " + groupByExpressions);
+            groupByElements = groupByExpressions.getGroupByExpressions();
         }
 
     }
 
-    public static Operator buildQueryPlan(Statement statement) throws Exception {
+    private void identifyWhereExpression(Expression expression) {
+        if (expression instanceof BinaryExpression) {
+            if (isJoinCondition((BinaryExpression) expression)) {
+                this.joinConditions.add(expression);
+                System.out.println("JOIN: " + expression);
+            } else {
+                this.selectionConditions.add(expression);
+                System.out.println("WHERE: " + expression);
+            }
+        }
+    }
 
-        //parsingSQL(statement);
+    private static boolean isJoinCondition(BinaryExpression binaryExpression) {
+
+        if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
+            Column leftColumn = (Column) binaryExpression.getLeftExpression();
+            Column rightColumn = (Column) binaryExpression.getRightExpression();
+
+            if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
+                String leftTableName = leftColumn.getTable().getName();
+                String rightTableName = rightColumn.getTable().getName();
+
+                if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
+                    return true;
+                } else {
+                    // In this case it is a comparison between columns of the same table
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void checkOperators() {
+
+        if (!this.projectionExpressions.isEmpty()) {
+            this.projectionOperator = true;
+        }
+        if (!this.joinConditions.isEmpty()) {
+            this.joinOperator = true;
+        }
+        if (!this.selectionConditions.isEmpty()) {
+            this.selectionOperator = true;
+        }
+        if (!this.sumExpressions.isEmpty()) {
+            this.sumOperator = true;
+        }
+        if (!this.orderByElements.isEmpty()) {
+            this.orderByOperator = true;
+        }
+        if (this.distinctElement != null) {
+            this.distinctOperator = true;
+        }
+        if (!this.joinsElements.isEmpty()) {
+            this.joinOperator = true;
+        }
+        if (!this.groupByElements.isEmpty()) {
+            this.groupByOperator = true;
+        }
+    }
+
+    public Operator buildQueryPlan(Statement statement) throws Exception {
+        identifyElementsOperators(statement);
+        checkOperators();
+
+        Operator rootOperator = null;
+
+        // 1. If we only have from table without any other operator
+        Operator scanOperator = new ScanOperator(fromTable);
+        rootOperator = scanOperator;
+
+        // 2. Adding the selection operator to optimise the query
+        if (selectionOperator) {
+            for (Expression selectionCondition : selectionConditions) {
+                Operator selectOperator = new SelectOperator(scanOperator, selectionCondition);
+                rootOperator = selectOperator;
+            }
+        }
+
+        // Evaluate when there is no condition as cross product
+        if (joinOperator) {
+            for (Expression joinCondition : joinConditions) {
+                // Identify the table on right side to scan it
+                BinaryExpression joinExpression = (BinaryExpression) joinCondition;
+                Column columnExpression = (Column) joinExpression.getRightExpression();
+                Operator scanRightTable = new ScanOperator(columnExpression.getTable().toString());
+                rootOperator = new JoinOperator(rootOperator, scanRightTable, joinCondition);
+            }
+        }
+
+
+//        if (join) {
+//            for (Object joinItem : joins) {
+//                String rightTableName = joinItem.toString();
+//                Operator joinScanOperator = new ScanOperator(rightTableName);
+////                BinaryExpression joinCondition;
+//
+//                if (joinConditions.size() > 0) {
+//                    for (Expression joinCondition : joinConditions) {
+//                        rootOperator = new JoinOperator(rootOperator, joinScanOperator, (BinaryExpression) joinConditions.get(0));
+//                    }
+//                } else {
+//                    rootOperator = new JoinOperator(rootOperator, joinScanOperator, null);
+//                }
+//            }
+
+
+
+
+
+
+
+
+        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
+        if (projectionOperator) {
+            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
+            rootOperator = projectOperator;
+        }
+
+        // Be carefull, keep distinct at the end of the operators
+        if (distinctOperator) {
+            Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
+            rootOperator = distinctOperator;
+        }
+
+        // Order by each element that we have in the list
+        if (orderByOperator) {
+            for (OrderByElement orderByElement : orderByElements) {
+                Expression orderByColumn = orderByElement.getExpression();
+                Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
+                rootOperator = orderByOperator;
+            }
+        }
+
+        return rootOperator;
+
+    }
+
+    public Operator buildQueryPlan2(Statement statement) throws Exception {
+
+        identifyElementsOperators(statement);
+        checkOperators();
+
+
         // Create a select
         Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
@@ -275,6 +438,8 @@ public class QueryPlanBuilder {
         /// ///////////////
         /// /////////////// /// /////////////// /// /////////////// /// ///////////////
 
+        // ensayo
+
         // Organising the tree of operators
         Operator scanOperator = new ScanOperator(tableName);
         rootOperator = scanOperator;
@@ -320,8 +485,8 @@ public class QueryPlanBuilder {
 
         // Be carefull projection, that affect joins, selection conditions afterwards
         if (projection) {
-            Operator projectOperator = new ProjectOperator(rootOperator, projectionItems);
-            rootOperator = projectOperator;
+            //Operator projectOperator = new ProjectOperator(rootOperator, projectionItems);
+            //rootOperator = projectOperator;
         }
 
         if (distinct) {
@@ -350,8 +515,8 @@ public class QueryPlanBuilder {
                     }
                 }
             }
-            Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
-            rootOperator = orderByOperator;
+            //Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
+            //rootOperator = orderByOperator;
         }
 
         if (sum) {
@@ -362,30 +527,6 @@ public class QueryPlanBuilder {
         return rootOperator;
     }
 
-    private static boolean isJoinCondition(BinaryExpression binaryExpression) {
 
-        if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
-            Column leftColumn = (Column) binaryExpression.getLeftExpression();
-            Column rightColumn = (Column) binaryExpression.getRightExpression();
-
-            if (leftColumn.getTable() != null && rightColumn.getTable() != null) {
-                String leftTableName = leftColumn.getTable().getName();
-                String rightTableName = rightColumn.getTable().getName();
-
-                if (leftTableName != null && rightTableName != null && !leftTableName.equals(rightTableName)) {
-                    // Hay una tabla en la cláusula WHERE
-//                    selection = false;
-//                    joinConditions.add(conditionExpression); // adding the join condition
-                    return true;
-
-                } else {
-                    return false;
-//                    selection = true;
-//                    selectionConditions.add(conditionExpression);
-                }
-            }
-        }
-        return false;
-    }
 
 }
