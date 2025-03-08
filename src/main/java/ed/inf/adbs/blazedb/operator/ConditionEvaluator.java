@@ -59,6 +59,7 @@ public class ConditionEvaluator extends ExpressionDeParser {
         }
     }
 
+    // This method is for join condition where we have to compare with right value from the right tuple
     public boolean evaluateJoinExpression(BinaryExpression binaryExpression, int rightValue) {
         int leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression()); // only integers
 

@@ -18,7 +18,6 @@ public class SelectOperator extends Operator {
 
     @Override
     public Tuple getNextTuple() throws Exception {
-        // organise all operator with the same kind of code
         Tuple tuple;
         while ((tuple = child.getNextTuple()) != null) { // While Child has tuples
             if (evaluator.evaluate(tuple)) { // Evaluate the given condition
@@ -28,7 +27,6 @@ public class SelectOperator extends Operator {
         return null;
     }
 
-    // it has a child so, it should reset the child
     @Override
     public void reset() throws Exception {
         child.reset();

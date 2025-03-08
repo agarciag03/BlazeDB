@@ -57,8 +57,7 @@ public class JoinOperator extends Operator{
     private boolean evaluateJoinCondition(Tuple leftTuple, Tuple rightTuple) {
         BinaryExpression binaryExpression = (BinaryExpression) joinCondition;
 
-        // extract the rightside value to become it as a selection operator
-
+        // extract the rightside value to become it into a selection operator
         ConditionEvaluator conditionEvaluator = new ConditionEvaluator(joinCondition);
         int rightValue = evaluateExpressionValue(binaryExpression.getRightExpression());
         return conditionEvaluator.evaluateJoin(leftTuple, binaryExpression, rightValue);

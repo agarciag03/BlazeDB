@@ -3,30 +3,20 @@ package ed.inf.adbs.blazedb.operator;
 import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.statement.select.SelectItem;
-
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ProjectOperator extends Operator {
     private Operator child;
     private List<Integer> columnIndexes;
 
-    // Constructor
-    //public ProjectOperator(Operator child, List<SelectItem> selectItems) {
-
     public ProjectOperator(Operator child, List<Expression> selectItems) {
         this.child = child;
         this.columnIndexes = new ArrayList<>();
 
-        // Extract the column indexes from the select
-        //for (SelectItem item : selectItems) {
         for (Expression expression : selectItems) {
-            //Expression expression = item.getExpression();
             if (expression != null) {
                 Column column = (Column) expression;
                 String tableName = column.getTable().getName();
