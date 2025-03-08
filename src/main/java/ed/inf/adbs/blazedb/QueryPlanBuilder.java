@@ -19,7 +19,7 @@ public class QueryPlanBuilder {
     // Elements of the query
     private String fromTable;
     private List<Expression> projectionExpressions = new ArrayList<>();
-    private List<Function> sumExpressions = new ArrayList<>();
+    private List<Expression> sumExpressions = new ArrayList<>();
     private List<Expression> joinConditions = new ArrayList<>();
     private List<Expression> selectionConditions = new ArrayList<>();
     private List<OrderByElement> orderByElements = new ArrayList<>();
@@ -60,9 +60,13 @@ public class QueryPlanBuilder {
 
             } else if (selectItem.getExpression() instanceof Function) {
                 // sum is always instance as a Function
+
                 Function function = (Function) selectItem.getExpression();
                 if (function.getName().equalsIgnoreCase("SUM")) {
-                    sumExpressions.add(function);
+
+                    Expression sumExpression = function.getParameters();
+                    //sumExpressions.add(sumExpression);
+                    sumExpressions.add(selectItem.getExpression());
                     sumOperator = true;
                     System.out.println("SUM:  " + function.getParameters());
                 }
@@ -232,6 +236,11 @@ public class QueryPlanBuilder {
                 rootOperator = orderByOperator;
             }
         }
+
+        if (groupByOperator) {
+            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions);
+            rootOperator = groupByOperator;
+            }
         return rootOperator;
     }
 
