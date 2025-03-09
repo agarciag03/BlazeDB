@@ -53,12 +53,16 @@ public class SumOperator extends Operator {
             List<Integer> groupKey = getGroupKey(tuple);
             groupedTuples.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(tuple);
         }
-        // Ahora procesamos SUM para cada grupo
+
+        // if we have sum expression
+
         for (List<Integer> groupKey : groupedTuples.keySet()) {
             List<Tuple> tuples = groupedTuples.get(groupKey);
+
             List<Integer> sumValues = computeSums(tuples);
             sumResults.put(groupKey, sumValues);
         }
+
     }
 
     private List<Integer> getGroupKey(Tuple tuple) {
@@ -85,9 +89,6 @@ public class SumOperator extends Operator {
             ExpressionList parameters = ((Function) expression).getParameters();
             if (parameters != null && parameters.getExpressions().size() == 1) {
                 Expression param = (Expression) parameters.getExpressions().get(0);
-//                Expression param = null;
-//                Expression param2 = parameters.get(0);
-                //Expression param = parameters.getExpressions().get(0);
 
                 if (param instanceof LongValue) {
                     return (int) ((LongValue) param).getValue(); // SUM(1)

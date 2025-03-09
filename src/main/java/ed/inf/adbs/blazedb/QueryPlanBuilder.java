@@ -18,6 +18,7 @@ public class QueryPlanBuilder {
 
     // Elements of the query
     private String fromTable;
+    private List<String> headers;
     private List<Expression> projectionExpressions = new ArrayList<>();
     private List<Function> sumExpressions = new ArrayList<>();
     private List<Expression> joinConditions = new ArrayList<>();
@@ -55,7 +56,7 @@ public class QueryPlanBuilder {
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         for (SelectItem selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllColumns) {
-                System.out.println("SELECT *");
+                System.out.println("SELECT allCollumns");
                 projectionOperator = false; // No need to project if all columns are selected
 
             } else if (selectItem.getExpression() instanceof Function) {
@@ -109,7 +110,9 @@ public class QueryPlanBuilder {
 
         // 5. Identify the distinct operator
         distinctElement = plainSelect.getDistinct();
-        System.out.println("DISTINCT: " + distinctElement);
+        if (distinctElement != null) {
+            System.out.println("DISTINCT: " + distinctElement);
+        }
 
         // 6. Identify the group by operator
         if (plainSelect.getGroupBy() != null) {
