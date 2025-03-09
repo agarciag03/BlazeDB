@@ -173,10 +173,13 @@ public class QueryPlanBuilder {
 
     private void checkOperators() {
 
-        if (!this.projectionExpressions.isEmpty()) {
+        if (!this.projectionExpressions.isEmpty() ) {
             this.projectionOperator = true;
         }
         if (!this.joinConditions.isEmpty()) {
+            this.joinOperator = true;
+        }
+        if (!this.joinsElements.isEmpty()) {
             this.joinOperator = true;
         }
         if (!this.selectionConditions.isEmpty()) {
@@ -191,9 +194,7 @@ public class QueryPlanBuilder {
         if (this.distinctElement != null) {
             this.distinctOperator = true;
         }
-        if (!this.joinsElements.isEmpty()) {
-            this.joinOperator = true;
-        }
+
         if (!this.groupByElements.isEmpty()) {
             this.groupByOperator = true;
         }
@@ -217,11 +218,6 @@ public class QueryPlanBuilder {
             }
         }
 
-        if (groupByOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions);
-            rootOperator = groupByOperator;
-        }
-
         // Joins
         if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
             for (Expression joinCondition : joinConditions) {
@@ -243,18 +239,6 @@ public class QueryPlanBuilder {
             }
         }
 
-        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
-        if (projectionOperator) {
-            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
-            rootOperator = projectOperator;
-        }
-
-        // Be carefull, keep distinct at the end of the operators
-        if (distinctOperator) {
-            Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
-            rootOperator = distinctOperator;
-        }
-
         // Order by each element that we have in the list
         if (orderByOperator) {
             for (OrderByElement orderByElement : orderByElements) {
@@ -263,6 +247,30 @@ public class QueryPlanBuilder {
                 rootOperator = orderByOperator;
             }
         }
+
+        if (groupByOperator || sumOperator) {
+            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionOperator);
+            rootOperator = groupByOperator;
+        }
+
+
+
+        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
+        // if there sum, sum will send the result to the projection
+        if (projectionOperator && !sumOperator && !groupByOperator) {
+            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
+            rootOperator = projectOperator;
+        }
+
+
+
+        // Be carefull, keep distinct at the end of the operators
+        if (distinctOperator) {
+            Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
+            rootOperator = distinctOperator;
+        }
+
+
 
 
         return rootOperator;

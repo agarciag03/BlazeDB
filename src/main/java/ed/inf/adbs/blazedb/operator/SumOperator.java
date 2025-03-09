@@ -18,16 +18,18 @@ public class SumOperator extends Operator {
     private Operator child;
     private List<Integer> groupByColumns;  // Índices de las columnas para GROUP BY
     private List<Function> sumExpressions;  // Expresiones SUM en la consulta
+    private boolean projection;  // Proyección de columnas
 
     private Map<List<Integer>, List<Tuple>> groupedTuples;  // Mapa para agrupar tuplas
     private Map<List<Integer>, List<Integer>> sumResults;  // Mapa de SUM por grupo
     private Iterator<List<Integer>> outputIterator;  // Iterador para los resultados
 
 
-    public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions) throws Exception {
+    public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions, Boolean projection) throws Exception {
         this.child = child;
         this.groupByColumns = getColumnIndexes(groupByElements);
         this.sumExpressions = sumExpressions;
+        this.projection = projection;
 
         this.groupedTuples = new HashMap<>();
         this.sumResults = new HashMap<>();
@@ -67,8 +69,14 @@ public class SumOperator extends Operator {
 
     private List<Integer> getGroupKey(Tuple tuple) {
         List<Integer> groupKey = new ArrayList<>();
-        for (int columnIndex : groupByColumns) {
-            groupKey.add((Integer) tuple.getValue(columnIndex));
+        if (groupByColumns.isEmpty()) {
+            // if there is not Groupby columns, we group by all columns
+            groupKey.add(-1);
+            return groupKey;
+        } else {
+            for (int columnIndex : groupByColumns) {
+                groupKey.add((Integer) tuple.getValue(columnIndex));
+            }
         }
         return groupKey;
     }
@@ -133,8 +141,13 @@ public class SumOperator extends Operator {
             List<Integer> groupKey = outputIterator.next();
             List<Integer> sums = sumResults.get(groupKey);
             Tuple tuple = new Tuple();
-            tuple.addValues(groupKey);
-            tuple.addValues(sums);
+            if (projection) {
+                tuple.addValues(groupKey);
+                tuple.addValues(sums);
+            } else {
+                tuple.addValues(sums);
+            }
+
             return tuple; //(groupKey, sums);
         }
         return null;
