@@ -56,8 +56,7 @@ public class QueryPlanBuilder {
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         for (SelectItem selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllColumns) {
-                System.out.println("SELECT allCollumns");
-                projectionOperator = false; // No need to project if all columns are selected
+                System.out.println("SELECT: AllCollumns");
 
             } else if (selectItem.getExpression() instanceof Function) {
                 // sum is always instance as a Function
@@ -68,13 +67,11 @@ public class QueryPlanBuilder {
                     Expression sumExpression = function.getParameters();
                     //sumExpressions.add(sumExpression);
                     sumExpressions.add(function);//selectItem.getExpression());
-                    sumOperator = true;
                     System.out.println("SUM:  " + function.getParameters());
                 }
             } else if (selectItem.getExpression() instanceof Column) {
                 // selectItem could be a number or a column
                 projectionExpressions.add(selectItem.getExpression());
-                projectionOperator = true;
                 System.out.println("SELECT:  " + selectItem.getExpression());
 
             } else {
@@ -82,7 +79,7 @@ public class QueryPlanBuilder {
             }
         }
 
-        // 2. Identifying the selections and joins operators
+        // 2. Identifying the selections and joins conditions
         Expression whereExpressions = plainSelect.getWhere(); //the condition in the WHERE clause
         if (whereExpressions != null) {
             // Here we need to identify the join conditions and selections going recursively into the AndExpression
@@ -94,11 +91,16 @@ public class QueryPlanBuilder {
             identifyWhereExpression(whereExpressions);
         }
 
-        // 3. Identifying the joins operator without any condition
+        // 3. Extract JoinsElements
         List<Join> joinsExpressions = plainSelect.getJoins();
         if (joinsExpressions != null) {
-            System.out.println("JOIN: " + joinsExpressions);
-            joinsElements = joinsExpressions;
+            for (Join join : joinsExpressions) {
+                // identify Joins without Conditions
+                if(!hasJoinCondition(join.toString())) {
+                    System.out.println("JOIN - CROSS PRODUCT: " + join);
+                    joinsElements.add(join);
+                }
+            }
         }
 
         // 4. Identifying the order by
@@ -122,6 +124,20 @@ public class QueryPlanBuilder {
 
     }
 
+    private boolean hasJoinCondition(String tableName) {
+        for (Expression joinCondition : joinConditions) {
+
+            BinaryExpression joinExpression = (BinaryExpression) joinCondition;
+            Column leftExpression = (Column) joinExpression.getLeftExpression();
+            Column righExpression = (Column) joinExpression.getRightExpression();
+
+            if (leftExpression.getTable().getName().equals(tableName) || righExpression.getTable().getName().equals(tableName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void identifyWhereExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             if (isJoinCondition((BinaryExpression) expression)) {
@@ -134,7 +150,7 @@ public class QueryPlanBuilder {
         }
     }
 
-    private static boolean isJoinCondition(BinaryExpression binaryExpression) {
+    private boolean isJoinCondition(BinaryExpression binaryExpression) {
 
         if (binaryExpression.getLeftExpression() instanceof Column && binaryExpression.getRightExpression() instanceof Column) {
             Column leftColumn = (Column) binaryExpression.getLeftExpression();
@@ -206,6 +222,7 @@ public class QueryPlanBuilder {
             rootOperator = groupByOperator;
         }
 
+        // Joins
         if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
             for (Expression joinCondition : joinConditions) {
                 // Identify the table on right side to scan it
@@ -214,13 +231,16 @@ public class QueryPlanBuilder {
                 Operator scanRightTable = new ScanOperator(columnExpression.getTable().toString());
                 rootOperator = new JoinOperator(rootOperator, scanRightTable, joinCondition);
             }
-        } else { // There is no join condition, then cross product - BE CAREFUL some could have condition and others not - piazza
-            for (Join join : joinsElements) {
-                String rightTableName = join.toString();
-                Operator joinScanOperator = new ScanOperator(rightTableName);
-                rootOperator = new JoinOperator(rootOperator, joinScanOperator, null);
-            }
+        }
 
+        // Cross products
+        if (joinOperator && !joinsElements.isEmpty()) { // There is a join condition
+            for (Join join : joinsElements) {
+                // Identify the table on right side to scan it
+                String rightTableName = join.toString();
+                Operator scanRightTable = new ScanOperator(rightTableName);
+                rootOperator = new JoinOperator(rootOperator, scanRightTable, null);
+            }
         }
 
         // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
