@@ -19,7 +19,7 @@ public class QueryPlanBuilder {
     // Elements of the query
     private String fromTable;
     private List<Expression> projectionExpressions = new ArrayList<>();
-    private List<Expression> sumExpressions = new ArrayList<>();
+    private List<Function> sumExpressions = new ArrayList<>();
     private List<Expression> joinConditions = new ArrayList<>();
     private List<Expression> selectionConditions = new ArrayList<>();
     private List<OrderByElement> orderByElements = new ArrayList<>();
@@ -66,7 +66,7 @@ public class QueryPlanBuilder {
 
                     Expression sumExpression = function.getParameters();
                     //sumExpressions.add(sumExpression);
-                    sumExpressions.add(selectItem.getExpression());
+                    sumExpressions.add(function);//selectItem.getExpression());
                     sumOperator = true;
                     System.out.println("SUM:  " + function.getParameters());
                 }
@@ -112,10 +112,9 @@ public class QueryPlanBuilder {
         System.out.println("DISTINCT: " + distinctElement);
 
         // 6. Identify the group by operator
-       GroupByElement groupByExpressions = plainSelect.getGroupBy();
-        if (groupByExpressions != null) {
-            System.out.println("GROUP BY: " + groupByExpressions);
-            groupByElements = groupByExpressions.getGroupByExpressions();
+        if (plainSelect.getGroupBy() != null) {
+            groupByElements = plainSelect.getGroupBy().getGroupByExpressionList();
+            System.out.println("GROUP BY: " + groupByElements);
         }
 
     }
@@ -199,6 +198,11 @@ public class QueryPlanBuilder {
             }
         }
 
+        if (groupByOperator) {
+            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions);
+            rootOperator = groupByOperator;
+        }
+
         if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
             for (Expression joinCondition : joinConditions) {
                 // Identify the table on right side to scan it
@@ -237,10 +241,7 @@ public class QueryPlanBuilder {
             }
         }
 
-        if (groupByOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions);
-            rootOperator = groupByOperator;
-            }
+
         return rootOperator;
     }
 
