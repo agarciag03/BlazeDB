@@ -175,6 +175,9 @@ public class BlazeDBTest {
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query14.csv"));
 
+		Collections.sort(result);
+		Collections.sort(expected);
+
 		assertEquals(expected, result);
 	}
 

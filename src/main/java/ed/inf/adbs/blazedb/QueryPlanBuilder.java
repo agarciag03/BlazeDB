@@ -196,7 +196,7 @@ public class QueryPlanBuilder {
         // 2. Adding the selection operator to optimise the query
         if (selectionOperator) {
             for (Expression selectionCondition : selectionConditions) {
-                Operator selectOperator = new SelectOperator(scanOperator, selectionCondition);
+                Operator selectOperator = new SelectOperator(rootOperator, selectionCondition);
                 rootOperator = selectOperator;
             }
         }
