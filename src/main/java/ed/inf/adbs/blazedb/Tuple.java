@@ -1,10 +1,7 @@
 package ed.inf.adbs.blazedb;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 
 /**
@@ -12,14 +9,34 @@ import java.util.ArrayList;
  */
 
 public class Tuple {
+    private List<String> columnNames = new ArrayList<>();
     private List<Integer> values;
 
-    // Constructor
+    // Constructor of tuples
     public Tuple (String line){
         values = new ArrayList<>();
         for (String value : line.split(",")){
             values.add(Integer.parseInt(value.trim())); //trim() removes whitespaces from the beginning and end of a string
         }
+    }
+
+    // Constructor of tuples with names
+    public Tuple (String line, String tableName, String[] columnNames){
+
+        // Capture the values of the tuple
+        values = new ArrayList<>();
+        for (String value : line.split(",")){
+            values.add(Integer.parseInt(value.trim())); //trim() removes whitespaces from the beginning and end of a string
+        }
+
+        for (String columnName : columnNames) {
+            this.columnNames.add(tableName + "." + columnName);
+        }
+
+        if (values.size() != columnNames.length) {
+            System.out.println("Error: Tuple values and column names do not match");
+        }
+
     }
 
     // Constructor #2
@@ -36,35 +53,42 @@ public class Tuple {
         return values;
     }
 
-    public Integer deleteValue(int index) {
-        return values.remove(index);
-    }
-
-    public void addValue(int value) {
+    public void addValue(int value, String columnName) {
         values.add(value);
+        columnNames.add(columnName);
     }
 
+    public void addValues(List<Integer> values, List<String> columnNames) {
+        this.values.addAll(values);
+        this.columnNames.addAll(columnNames);
+    }
+
+    //Eliminar
     public void addValues(List<Integer> values) {
         this.values.addAll(values);
+
     }
 
     // Join two tuples
     public Tuple join(Tuple tuple) {
+
+        // Join the tuples values
         Tuple joinedTuple = new Tuple();
-        joinedTuple.addValues(this.values);
-        joinedTuple.addValues(tuple.getValues());
+        joinedTuple.addValues(this.values, this.columnNames);
+        joinedTuple.addValues(tuple.getValues(), tuple.columnNames);
+
+        // join the tuples column names
+//        joinedTuple.columnNames.addAll(this.columnNames);
+//        joinedTuple.columnNames.addAll(tuple.columnNames);
+
+        System.out.println(joinedTuple.toStringWithColumns());
+
         return joinedTuple;
     }
 
     public Integer size() {
         return values.size();
     }
-
-//    //this method allows to get a particular value based on the column name
-//    public Integer getValue(String columnName) {
-//
-//        return values.get(index);
-//    }
 
     //This method returns the tuples values split by a comma as expected output shows
     @Override
@@ -73,6 +97,13 @@ public class Tuple {
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
     }
+
+    public String toStringWithColumns() {
+        String plainTuple = "Columns: " + columnNames.toString() + " values: " + this.toString();
+        return plainTuple;
+        }
+
+
 
     // Adjusting the hashing function to return unique values
     @Override
@@ -88,4 +119,17 @@ public class Tuple {
         Tuple tuple = (Tuple) o;
         return Objects.equals(values, tuple.values);
     }
+
+    public int getColumnIndex(String columnName) {
+        return columnNames.indexOf(columnName);
+    }
+//
+//    String[] columns = schemaMap.get(tableName);
+//        for (int i = 0; i < columns.length; i++) {
+//        if (columns[i].equals(columnName)) {
+//            return i;
+//        }
+//    }
+//        throw new IllegalArgumentException("Column " + columnName + " not found in table " + tableName);
+
 }

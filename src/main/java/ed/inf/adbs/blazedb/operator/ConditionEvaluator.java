@@ -83,10 +83,12 @@ public class ConditionEvaluator extends ExpressionDeParser {
     private int evaluateExpressionValue(Expression expression) {
         if (expression instanceof Column) {
             Column column = (Column) expression;
-            Catalog catalog = Catalog.getInstance();
-            String tableName = column.getTable().getName();
-            String columnName = column.getColumnName();
-            int columnIndex = catalog.getColumnIndex(tableName, columnName);
+            //Catalog catalog = Catalog.getInstance();
+            //String tableName = column.getTable().getName();
+            //String columnName = column.getColumnName();
+            //int columnIndex = catalog.getColumnIndex(tableName, columnName);
+            int columnIndex = tuple.getColumnIndex(column.toString());
+            //int columnIndex = tuple.getColumnIndex(tableName + "." + columnName);
             return tuple.getValue(columnIndex);
         } else {
             // if longValue

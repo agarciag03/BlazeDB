@@ -16,7 +16,8 @@ import java.util.*;
 
 public class SumOperator extends Operator {
     private Operator child;
-    private List<Integer> groupByColumns;  // Índices de las columnas para GROUP BY
+    //private List<Integer> groupByColumns;  // Índices de las columnas para GROUP BY
+    private List<String> groupByColumnsNames;  // Nombres de las columnas para GROUP BY
     private List<Function> sumExpressions;  // Expresiones SUM en la consulta
     private boolean projection;  // Proyección de columnas
 
@@ -27,7 +28,8 @@ public class SumOperator extends Operator {
 
     public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions, Boolean projection) throws Exception {
         this.child = child;
-        this.groupByColumns = getColumnIndexes(groupByElements);
+        //this.groupByColumns = getColumnIndexes(groupByElements);
+        this.groupByColumnsNames = getColumnNames(groupByElements);
         this.sumExpressions = sumExpressions;
         this.projection = projection;
 
@@ -45,8 +47,19 @@ public class SumOperator extends Operator {
             String columnName = column.getColumnName();
             int columnIndex = Catalog.getInstance().getColumnIndex(tableName, columnName);
             groupByColumns.add(columnIndex);
+            groupByColumnsNames.add(column.toString());
         }
         return groupByColumns;
+    }
+
+    private List<String> getColumnNames(List<Expression> groupByElements) {
+        this.groupByColumnsNames = new ArrayList<>();
+        //List<Integer> groupByColumns = new ArrayList<>();
+        for (Expression expression : groupByElements) {
+            Column column = (Column) expression;
+            groupByColumnsNames.add(column.toString());
+        }
+        return groupByColumnsNames;
     }
 
     private void processAggregation() throws Exception{
@@ -69,13 +82,15 @@ public class SumOperator extends Operator {
 
     private List<Integer> getGroupKey(Tuple tuple) {
         List<Integer> groupKey = new ArrayList<>();
-        if (groupByColumns.isEmpty()) {
+        //if (groupByColumns.isEmpty()) {
+        if(groupByColumnsNames.isEmpty()) {
             // if there is not Groupby columns, we group by all columns
             groupKey.add(-1);
             return groupKey;
         } else {
-            for (int columnIndex : groupByColumns) {
-                groupKey.add((Integer) tuple.getValue(columnIndex));
+            //for (int columnIndex : groupByColumns) {
+            for (String column : groupByColumnsNames) {
+                groupKey.add((Integer) tuple.getValue(tuple.getColumnIndex(column)));
             }
         }
         return groupKey;
@@ -142,10 +157,14 @@ public class SumOperator extends Operator {
             List<Integer> sums = sumResults.get(groupKey);
             Tuple tuple = new Tuple();
             if (projection) {
-                tuple.addValues(groupKey);
-                tuple.addValues(sums);
+                tuple.addValues(groupKey, groupByColumnsNames);
+                //ExpressionList parameters = ((Function) sumExpressions).getParameters();
+                //Expression param = (Expression) parameters.getExpressions().get(0);
+                tuple.addValues(sums); // OJOOOOOO add SUM
             } else {
-                tuple.addValues(sums);
+                //ExpressionList parameters = ((Function) sumExpressions).getParameters();
+                //Expression param = (Expression) parameters.getExpressions().get(0);
+                tuple.addValues(sums); //OJOOOO add SUM
             }
 
             return tuple; //(groupKey, sums);

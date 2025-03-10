@@ -239,6 +239,11 @@ public class QueryPlanBuilder {
             }
         }
 
+        if (groupByOperator || sumOperator) {
+            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionOperator);
+            rootOperator = groupByOperator;
+        }
+
         // Order by each element that we have in the list
         if (orderByOperator) {
             for (OrderByElement orderByElement : orderByElements) {
@@ -247,13 +252,6 @@ public class QueryPlanBuilder {
                 rootOperator = orderByOperator;
             }
         }
-
-        if (groupByOperator || sumOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionOperator);
-            rootOperator = groupByOperator;
-        }
-
-
 
         // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
         // if there sum, sum will send the result to the projection

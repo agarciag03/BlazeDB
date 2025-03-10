@@ -10,10 +10,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+
 public class SortOperator extends Operator{
     private Operator child;
     private List<Integer> orderByColumns;
     private Integer orderByColumn;
+    private String orderByCol;
     private List<Tuple> sortedTuples; //Internal Buffer
     private int index;
 
@@ -21,21 +23,22 @@ public class SortOperator extends Operator{
     //new implementation
     public SortOperator(Operator child, Expression orderByColumn) throws Exception {
         this.child = child;
-        this.orderByColumn = identifyColumnIndex(orderByColumn);
+        //this.orderByColumn = identifyColumnIndex(orderByColumn);
+        this.orderByCol = ((Column) orderByColumn).toString();
         this.sortedTuples = sortTuples(getAllTuples(child)); // Read all of the output from its child operator and sort it.
         this.index = 0;
     }
 
-    private Integer identifyColumnIndex(Expression orderByColumn) {
-        if (orderByColumn != null) {
-            Column column = (Column) orderByColumn;
-            String tableName = column.getTable().getName();
-            String columnName = column.getColumnName();
-            int columnIndex = Catalog.getInstance().getColumnIndex(tableName, columnName);
-            return columnIndex;
-        }
-        return null;
-    }
+//    private Integer identifyColumnIndex(Expression orderByColumn) {
+//        if (orderByColumn != null) {
+//            Column column = (Column) orderByColumn;
+//            String tableName = column.getTable().getName();
+//            String columnName = column.getColumnName();
+//            int columnIndex = Catalog.getInstance().getColumnIndex(tableName, columnName);
+//            return columnIndex;
+//        }
+//        return null;
+//    }
 
 //    public SortOperator(Operator child, List<Integer> orderByColumns) throws Exception {
 //        this.child = child;
@@ -57,9 +60,10 @@ public class SortOperator extends Operator{
     public List<Tuple> sortTuples(List<Tuple> tuples) {
         Collections.sort(tuples, new Comparator<Tuple>() {
             @Override
-            public int compare(Tuple t1, Tuple t2) {
+            public int compare(Tuple tuple1, Tuple tuple2) {
                 //int columnIndex = orderByColumns.get(0);
-                return t1.getValue(orderByColumn).compareTo(t2.getValue(orderByColumn));
+                int orderByColumn = tuple1.getColumnIndex(orderByCol);
+                return tuple1.getValue(orderByColumn).compareTo(tuple2.getValue(orderByColumn));
                 //return t1.getValue(columnIndex).compareTo(t2.getValue(columnIndex));
             }
         });

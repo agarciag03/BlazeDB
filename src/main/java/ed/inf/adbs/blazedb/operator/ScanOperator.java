@@ -7,13 +7,19 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 
 public class ScanOperator extends Operator{
-    private BufferedReader reader;
+    private String tableName;
+    private String[] columnNames;
     private String filePath;
+    private BufferedReader reader;
+
 
     public ScanOperator(String tableName) throws Exception {
         try {
+            this.tableName = tableName;
+            this.columnNames = Catalog.getInstance().getSchema(tableName);
             this.filePath = Catalog.getInstance().getTableFilePath(tableName);
-            reset(); // Reset the operator
+            reset();
+
             } catch (Exception e) {
             e.printStackTrace();
             throw new Exception("Table file not found");
@@ -25,9 +31,10 @@ public class ScanOperator extends Operator{
         Tuple tuple = null;
         String line = reader.readLine();
         if (line != null){
-            tuple = new Tuple(line);
+            //tuple = new Tuple(line);
+            tuple = new Tuple(line, tableName, columnNames);
+            //System.out.println("ScanOperator: " + tuple.toStringWithColumns());
         }
-
         return tuple;
     }
 

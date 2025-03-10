@@ -66,10 +66,11 @@ public class JoinOperator extends Operator{
     private int evaluateExpressionValue(Expression expression) {
         if (expression instanceof Column) {
             Column column = (Column) expression;
-            Catalog catalog = Catalog.getInstance();
-            String tableName = column.getTable().getName();
-            String columnName = column.getColumnName();
-            int columnIndex = catalog.getColumnIndex(tableName, columnName);
+//            Catalog catalog = Catalog.getInstance();
+//            String tableName = column.getTable().getName();
+//            String columnName = column.getColumnName();
+//            int columnIndex = catalog.getColumnIndex(tableName, columnName);
+            int columnIndex = rightTuple.getColumnIndex(column.toString());
             return rightTuple.getValue(columnIndex);
         } else {
             // if longValue
