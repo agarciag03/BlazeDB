@@ -1,6 +1,5 @@
 package ed.inf.adbs.blazedb.operator;
 
-import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
@@ -66,10 +65,6 @@ public class JoinOperator extends Operator{
     private int evaluateExpressionValue(Expression expression) {
         if (expression instanceof Column) {
             Column column = (Column) expression;
-//            Catalog catalog = Catalog.getInstance();
-//            String tableName = column.getTable().getName();
-//            String columnName = column.getColumnName();
-//            int columnIndex = catalog.getColumnIndex(tableName, columnName);
             int columnIndex = rightTuple.getColumnIndex(column.toString());
             return rightTuple.getValue(columnIndex);
         } else {

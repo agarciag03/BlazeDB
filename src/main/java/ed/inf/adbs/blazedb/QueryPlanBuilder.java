@@ -5,20 +5,17 @@ import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
-import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class QueryPlanBuilder {
 
     // Elements of the query
     private String fromTable;
-    private List<String> headers;
     private List<Expression> projectionExpressions = new ArrayList<>();
     private List<Function> sumExpressions = new ArrayList<>();
     private List<Expression> joinConditions = new ArrayList<>();
@@ -103,7 +100,7 @@ public class QueryPlanBuilder {
             }
         }
 
-        // 4. Identifying the order by
+        // 4. Identifying the order by expressions
         List <OrderByElement> orderbyExpressions =  plainSelect.getOrderByElements();
         if (orderbyExpressions != null) {
             System.out.println("ORDER BY: " + orderbyExpressions);
@@ -260,17 +257,12 @@ public class QueryPlanBuilder {
             rootOperator = projectOperator;
         }
 
-
-
         // Be carefull, keep distinct at the end of the operators
         if (distinctOperator) {
             Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
             rootOperator = distinctOperator;
         }
-
-
-
-
+        
         return rootOperator;
     }
 

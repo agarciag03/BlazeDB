@@ -24,7 +24,6 @@ public class DuplicateEliminationOperator extends Operator {
             tuple = child.getNextTuple();
         }
         return null;
-
     }
 
     @Override

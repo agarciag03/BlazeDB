@@ -38,7 +38,6 @@ public class SortOperator extends Operator{
     }
 
     public List<Tuple> sortTuples(List<Tuple> tuples) {
-
         Collections.sort(tuples, new Comparator<Tuple>() {
             @Override
             public int compare(Tuple tuple1, Tuple tuple2) {

@@ -31,9 +31,7 @@ public class ScanOperator extends Operator{
         Tuple tuple = null;
         String line = reader.readLine();
         if (line != null){
-            //tuple = new Tuple(line);
             tuple = new Tuple(line, tableName, columnNames);
-            //System.out.println("ScanOperator: " + tuple.toStringWithColumns());
         }
         return tuple;
     }

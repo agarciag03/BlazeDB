@@ -160,7 +160,7 @@ public class BlazeDBTest {
 	// New case: Projections and selection at the same time
 	@Test
 	public void query13Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query13.sql", "samples/output/output.csv"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query13.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList("50");
@@ -170,7 +170,7 @@ public class BlazeDBTest {
 
 	@Test
 	public void query14Test() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query14.sql", "samples/output/output.csv"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query14.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query14.csv"));
@@ -184,10 +184,20 @@ public class BlazeDBTest {
 	@Test
 	public void query15Test() throws Exception {
 		System.out.println("Cross product - between 3 tables: ");
-		BlazeDB.main(new String[] {"samples/db", "samples/input/query15.sql", "samples/output/output.csv"});
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query15.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query15.csv"));
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query16Test() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query16.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList("200", "200", "100", "100", "100", "300");
 
 		assertEquals(expected, result);
 	}

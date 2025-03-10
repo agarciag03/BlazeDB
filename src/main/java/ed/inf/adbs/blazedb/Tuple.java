@@ -12,7 +12,7 @@ public class Tuple {
     private List<String> columnNames = new ArrayList<>();
     private List<Integer> values;
 
-    // Constructor of tuples
+    // Constructor #1 of tuples
     public Tuple (String line){
         values = new ArrayList<>();
         for (String value : line.split(",")){
@@ -20,7 +20,7 @@ public class Tuple {
         }
     }
 
-    // Constructor of tuples with names
+    // Constructor #2 of tuples with names
     public Tuple (String line, String tableName, String[] columnNames){
 
         // Capture the values of the tuple
@@ -39,7 +39,7 @@ public class Tuple {
 
     }
 
-    // Constructor #2
+    // Constructor #3
     public Tuple() {
         values = new ArrayList<>();
     }
@@ -63,13 +63,6 @@ public class Tuple {
         this.columnNames.addAll(columnNames);
     }
 
-    //Eliminar
-    public void addValues(List<Integer> values) {
-        this.values.addAll(values);
-
-    }
-
-    // Join two tuples
     public Tuple join(Tuple tuple) {
 
         // Join the tuples values
@@ -77,17 +70,9 @@ public class Tuple {
         joinedTuple.addValues(this.values, this.columnNames);
         joinedTuple.addValues(tuple.getValues(), tuple.columnNames);
 
-        // join the tuples column names
-//        joinedTuple.columnNames.addAll(this.columnNames);
-//        joinedTuple.columnNames.addAll(tuple.columnNames);
-
-        joinedTuple.printTupleWithColumns();
+        //joinedTuple.printTupleWithColumns();
 
         return joinedTuple;
-    }
-
-    public Integer size() {
-        return values.size();
     }
 
     //This method returns the tuples values split by a comma as expected output shows
@@ -102,8 +87,6 @@ public class Tuple {
         String plainTuple = "Columns: " + columnNames.toString() + " values: " + this.toString();
         System.out.println(plainTuple);
         }
-
-
 
     // Adjusting the hashing function to return unique values
     @Override
@@ -123,13 +106,5 @@ public class Tuple {
     public int getColumnIndex(String columnName) {
         return columnNames.indexOf(columnName);
     }
-//
-//    String[] columns = schemaMap.get(tableName);
-//        for (int i = 0; i < columns.length; i++) {
-//        if (columns[i].equals(columnName)) {
-//            return i;
-//        }
-//    }
-//        throw new IllegalArgumentException("Column " + columnName + " not found in table " + tableName);
 
 }

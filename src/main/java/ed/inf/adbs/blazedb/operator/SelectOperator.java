@@ -1,14 +1,13 @@
 package ed.inf.adbs.blazedb.operator;
 
-import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.Expression;
 
 public class SelectOperator extends Operator {
 
-    private Operator child; // This operator has one child
-    private Expression condition; // The condition that needs to be satisfied
-    private ConditionEvaluator evaluator; // Evaluator to check the condition
+    private Operator child;
+    private Expression condition;
+    private ConditionEvaluator evaluator;
 
     public SelectOperator(Operator child, Expression condition) {
         this.child = child;

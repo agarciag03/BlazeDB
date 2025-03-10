@@ -12,6 +12,7 @@ import java.util.Map;
  *  2. What the schema of different tables is
  */
 public class Catalog {
+
     //Using singleton pattern to ensure one instance
     private static Catalog instance;
     private Map<String, String> fileMap; //Map locations of tables to their names
@@ -61,17 +62,6 @@ public class Catalog {
 
     public String[] getSchema(String tableName) {
         return schemaMap.get(tableName);
-    }
-
-    // Identify the index of the column in the table for Selection
-    public int getColumnIndex(String tableName, String columnName) {
-        String[] columns = schemaMap.get(tableName);
-        for (int i = 0; i < columns.length; i++) {
-            if (columns[i].equals(columnName)) {
-                return i;
-            }
-        }
-        throw new IllegalArgumentException("Column " + columnName + " not found in table " + tableName);
     }
 
 }

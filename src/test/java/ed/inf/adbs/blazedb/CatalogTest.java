@@ -15,14 +15,5 @@ public class CatalogTest {
         catalog.loadSchema("samples/db");
     }
 
-   @Test
-   public void testGetColumnIndex() {
-       // Assuming the schema for students table is "id name age"
-
-       assertEquals(0, catalog.getColumnIndex("Student", "A"));
-       assertEquals(1, catalog.getColumnIndex("Student", "B"));
-       assertEquals(2, catalog.getColumnIndex("Student", "C"));
-   }
-
 
 }
