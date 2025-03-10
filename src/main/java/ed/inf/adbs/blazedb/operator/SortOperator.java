@@ -1,56 +1,36 @@
 package ed.inf.adbs.blazedb.operator;
 
-import ed.inf.adbs.blazedb.Catalog;
 import ed.inf.adbs.blazedb.Tuple;
-import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.select.OrderByElement;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 
 public class SortOperator extends Operator{
     private Operator child;
-    private List<Integer> orderByColumns;
-    private Integer orderByColumn;
-    private String orderByCol;
-    private List<Tuple> sortedTuples; //Internal Buffer
-    private int index;
+    private List<String> orderByColumns;
+    private List<Tuple> SortedTuples; //Internal Buffer
+    private Iterator<Tuple> iteratorSortedTuples; //Iterator internal Buffer
 
 
-    //new implementation
-    public SortOperator(Operator child, Expression orderByColumn) throws Exception {
+    public SortOperator(Operator child, List<OrderByElement> orderByColumn) throws Exception {
         this.child = child;
-        //this.orderByColumn = identifyColumnIndex(orderByColumn);
-        this.orderByCol = ((Column) orderByColumn).toString();
-        this.sortedTuples = sortTuples(getAllTuples(child)); // Read all of the output from its child operator and sort it.
-        this.index = 0;
+        this.orderByColumns = getColumnsOrderBy(orderByColumn);
     }
 
-//    private Integer identifyColumnIndex(Expression orderByColumn) {
-//        if (orderByColumn != null) {
-//            Column column = (Column) orderByColumn;
-//            String tableName = column.getTable().getName();
-//            String columnName = column.getColumnName();
-//            int columnIndex = Catalog.getInstance().getColumnIndex(tableName, columnName);
-//            return columnIndex;
-//        }
-//        return null;
-//    }
-
-//    public SortOperator(Operator child, List<Integer> orderByColumns) throws Exception {
-//        this.child = child;
-//        this.orderByColumns = orderByColumns;
-//        this.sortedTuples = sortTuples(getAllTuples(child)); // Read all of the output from its child operator and sort it.
-//        this.index = 0;
-//    }
+    private List<String> getColumnsOrderBy(List<OrderByElement> orderByColumn) {
+        List<String> columns = new ArrayList<>();
+        for (OrderByElement element : orderByColumn) {
+            Column column = (Column) element.getExpression();
+            columns.add(column.toString());
+        }
+        return columns;
+    }
 
     public List <Tuple> getAllTuples(Operator child) throws Exception {
         List <Tuple> tuples = new ArrayList<>();
         Tuple tuple;
-
         while ((tuple = child.getNextTuple()) != null) {
             tuples.add(tuple);
         }
@@ -58,37 +38,36 @@ public class SortOperator extends Operator{
     }
 
     public List<Tuple> sortTuples(List<Tuple> tuples) {
+
         Collections.sort(tuples, new Comparator<Tuple>() {
             @Override
             public int compare(Tuple tuple1, Tuple tuple2) {
-                //int columnIndex = orderByColumns.get(0);
-                int orderByColumn = tuple1.getColumnIndex(orderByCol);
-                return tuple1.getValue(orderByColumn).compareTo(tuple2.getValue(orderByColumn));
-                //return t1.getValue(columnIndex).compareTo(t2.getValue(columnIndex));
+                for (String column : orderByColumns) {
+                    int columnIndex = tuple1.getColumnIndex(column);
+                    int comparison = tuple1.getValue(columnIndex).compareTo(tuple2.getValue(columnIndex));
+
+                    if (comparison != 0) { // Si hay diferencia, devolvemos el resultado
+                        return comparison;
+                    }
+                }
+                return 0; // if the tuples are equal in all columns, they are considered equal
             }
         });
         return tuples;
-//        Collections.sort(tuples, new Comparator<Tuple>() {
-//            @Override
-//            public int compare(Tuple t1, Tuple t2) {
-//                for (String column : orderByColumns) {
-//                    int comparison = t1.getValue(column).compareTo(t2.getValue(column));
-//                    if (comparison != 0) {
-//                        return comparison;
-//                    }
-//                }
-//                return 0;
-//            }
-//        });
-        //return null; //tuples;
     }
-
 
     @Override
     public Tuple getNextTuple() throws Exception {
-        // Return the next tuple from the sorted list
-        if (index < sortedTuples.size()) {
-            return sortedTuples.get(index++);
+
+        // blocking operator to sort all the tuples
+        if (iteratorSortedTuples == null) {
+            this.SortedTuples = sortTuples(getAllTuples(child));
+            this.iteratorSortedTuples = SortedTuples.iterator();
+        }
+
+        // send the next tuple
+        if (iteratorSortedTuples.hasNext()) {
+            return iteratorSortedTuples.next();
         }
         return null;
     }
@@ -96,6 +75,6 @@ public class SortOperator extends Operator{
     @Override
     public void reset() throws Exception {
         //Scan all the sorted list again
-        index = 0;
+        this.iteratorSortedTuples = SortedTuples.iterator();
     }
 }

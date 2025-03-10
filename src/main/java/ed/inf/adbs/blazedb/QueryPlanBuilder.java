@@ -248,9 +248,9 @@ public class QueryPlanBuilder {
         if (orderByOperator) {
             for (OrderByElement orderByElement : orderByElements) {
                 Expression orderByColumn = orderByElement.getExpression();
-                Operator orderByOperator = new SortOperator(rootOperator, orderByColumn);
-                rootOperator = orderByOperator;
             }
+            Operator orderByOperator = new SortOperator(rootOperator, orderByElements);
+            rootOperator = orderByOperator;
         }
 
         // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards

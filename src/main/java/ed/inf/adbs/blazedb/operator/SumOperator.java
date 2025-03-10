@@ -160,16 +160,25 @@ public class SumOperator extends Operator {
                 tuple.addValues(groupKey, groupByColumnsNames);
                 //ExpressionList parameters = ((Function) sumExpressions).getParameters();
                 //Expression param = (Expression) parameters.getExpressions().get(0);
-                tuple.addValues(sums); // OJOOOOOO add SUM
+                tuple.addValues(sums, getSumExpressions(this.sumExpressions)); // OJOOOOOO add SUM
             } else {
                 //ExpressionList parameters = ((Function) sumExpressions).getParameters();
                 //Expression param = (Expression) parameters.getExpressions().get(0);
-                tuple.addValues(sums); //OJOOOO add SUM
+                tuple.addValues(sums, getSumExpressions(this.sumExpressions)); //OJOOOO add SUM
             }
-
+            tuple.printTupleWithColumns();
             return tuple; //(groupKey, sums);
         }
         return null;
+    }
+
+
+    private  List <String> getSumExpressions(List<Function> sumExpressions) {
+        List<String> sumExpressionsList = new ArrayList<>();
+        for (Function function : sumExpressions) {
+            sumExpressionsList.add(function.toString());
+        }
+        return sumExpressionsList;
     }
 //    public Tuple getNextTuple() throws Exception {
 //        if (outputIterator == null) { // It is the first time it is called

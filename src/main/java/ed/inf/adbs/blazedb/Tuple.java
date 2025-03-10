@@ -81,7 +81,7 @@ public class Tuple {
 //        joinedTuple.columnNames.addAll(this.columnNames);
 //        joinedTuple.columnNames.addAll(tuple.columnNames);
 
-        System.out.println(joinedTuple.toStringWithColumns());
+        joinedTuple.printTupleWithColumns();
 
         return joinedTuple;
     }
@@ -98,9 +98,9 @@ public class Tuple {
                 .collect(Collectors.joining(", "));
     }
 
-    public String toStringWithColumns() {
+    public void printTupleWithColumns() {
         String plainTuple = "Columns: " + columnNames.toString() + " values: " + this.toString();
-        return plainTuple;
+        System.out.println(plainTuple);
         }
 
 
