@@ -1,0 +1,1 @@
+SELECT SUM(5), SUM(Student.A), SUM(Student.A * Student.B), SUM(Student.C * Student.C * Student.C) FROM Student;

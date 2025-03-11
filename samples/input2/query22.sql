@@ -1,0 +1,1 @@
+SELECT Student.A, Student.B, Student.C, Example.J, SUM(Student.A * Example.K) FROM Student, Example WHERE Student.A = Example.I;

@@ -1,0 +1,1 @@
+SELECT B, SUM(A * B) FROM Student GROUP BY B;
