@@ -200,6 +200,9 @@ public class BlazeDBTest {
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList("200", "200", "100", "100", "100", "300");
 
+		Collections.sort(result);
+		Collections.sort(expected);
+
 		assertEquals(expected, result);
 	}
 

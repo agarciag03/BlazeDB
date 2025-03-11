@@ -15,6 +15,7 @@ public class SumOperator extends Operator {
     private Operator child;
     private List<String> groupByColumnsNames;
     private List<Function> sumExpressions;
+    private List<String> projectionColumns;
 
     private Map<List<Integer>, List<Tuple>> groupedTuples;
     private Map<List<Integer>, List<Integer>> aggregateResults;
@@ -22,11 +23,12 @@ public class SumOperator extends Operator {
 
     private boolean projection;  // Proyección de columnas
 
-    public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions, Boolean projection) {
+    public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions, List<Expression> projectionElements) {
         this.child = child;
-        this.groupByColumnsNames = getColumnGroupBy(groupByElements);
+        this.groupByColumnsNames = getColumns(groupByElements);
         this.sumExpressions = sumExpressions;
-        this.projection = projection;
+        this.projectionColumns = getColumns(projectionElements);
+        //this.projection = projection;
     }
 
     @Override
@@ -46,8 +48,11 @@ public class SumOperator extends Operator {
             Tuple tuple = new Tuple();
 
             // return tuples depending on GroupBy and Sum
-            if (!groupByColumnsNames.isEmpty() && projection) {
-                tuple.addValues(groupKey, groupByColumnsNames);
+            if (!groupByColumnsNames.isEmpty() && !projectionColumns.isEmpty()) {
+                for (String column : projectionColumns){
+                    tuple.addValue(groupKey.get(0), column);
+                }
+                //tuple.addValues(groupKey, groupByColumnsNames);
             }
             if (!sumExpressions.isEmpty()) {
                 tuple.addValues(sums, getSumExpressions(this.sumExpressions));
@@ -64,13 +69,13 @@ public class SumOperator extends Operator {
         this.outputIterator = aggregateResults.keySet().iterator();
     }
 
-    private List<String> getColumnGroupBy(List<Expression> groupByElements) {
-        this.groupByColumnsNames = new ArrayList<>();
-        for (Expression expression : groupByElements) {
+    private List<String> getColumns(List<Expression> expressionElements) {
+        List<String> columnNames = new ArrayList<>();
+        for (Expression expression : expressionElements) {
             Column column = (Column) expression;
-            groupByColumnsNames.add(column.toString());
+            columnNames.add(column.toString());
         }
-        return groupByColumnsNames;
+        return columnNames;
     }
 
     private void processGroupByAndSum() throws Exception {

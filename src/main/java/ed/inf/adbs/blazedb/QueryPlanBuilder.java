@@ -34,6 +34,7 @@ public class QueryPlanBuilder {
     private boolean groupByOperator = false;
     private boolean sumOperator = false;
 
+    private Operator rootOperator;
     /**
      * This method is responsible of identifying all the elements and operators of the query to build the query plan
      *
@@ -96,6 +97,10 @@ public class QueryPlanBuilder {
                 if(!hasJoinCondition(join.toString())) {
                     System.out.println("JOIN - CROSS PRODUCT: " + join);
                     joinsElements.add(join);
+                } else {
+                    System.out.println("organise the join conditions in left tree");
+
+
                 }
             }
         }
@@ -138,7 +143,8 @@ public class QueryPlanBuilder {
     private void identifyWhereExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             if (isJoinCondition((BinaryExpression) expression)) {
-                this.joinConditions.add(expression);
+                //this.joinConditions.add(expression);
+                this.joinConditions.add(0, expression);
                 System.out.println("JOIN: " + expression);
             } else {
                 this.selectionConditions.add(expression);
@@ -195,17 +201,28 @@ public class QueryPlanBuilder {
         if (!this.groupByElements.isEmpty()) {
             this.groupByOperator = true;
         }
+
     }
 
     public Operator buildQueryPlan(Statement statement) throws Exception {
         identifyElementsOperators(statement);
         checkOperators();
 
-        Operator rootOperator = null;
+        rootOperator = null; // Reset the root operator
 
-        // 1. If we only have from table without any other operator
-        Operator scanOperator = new ScanOperator(fromTable);
+        Operator scanOperator = new ScanOperator(fromTable); // It always needs to go for the first table to do left trees
         rootOperator = scanOperator;
+
+        // Joins
+        if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
+            for (Expression joinCondition : joinConditions) {
+                BinaryExpression joinExpression = (BinaryExpression) joinCondition;
+
+                // Identify the table on right side to scan it
+                Column rightcolumn = (Column) joinExpression.getRightExpression();
+                rootOperator = new JoinOperator(rootOperator, scanOperator(rightcolumn.getTable().toString()), joinCondition);
+            }
+        }
 
         // 2. Adding the selection operator to optimise the query
         if (selectionOperator) {
@@ -215,29 +232,18 @@ public class QueryPlanBuilder {
             }
         }
 
-        // Joins
-        if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
-            for (Expression joinCondition : joinConditions) {
-                // Identify the table on right side to scan it
-                BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-                Column columnExpression = (Column) joinExpression.getRightExpression();
-                Operator scanRightTable = new ScanOperator(columnExpression.getTable().toString());
-                rootOperator = new JoinOperator(rootOperator, scanRightTable, joinCondition);
-            }
-        }
-
         // Cross products
         if (joinOperator && !joinsElements.isEmpty()) { // There is a join condition
             for (Join join : joinsElements) {
                 // Identify the table on right side to scan it
                 String rightTableName = join.toString();
-                Operator scanRightTable = new ScanOperator(rightTableName);
+                Operator scanRightTable = scanOperator(rightTableName);
                 rootOperator = new JoinOperator(rootOperator, scanRightTable, null);
             }
         }
 
         if (groupByOperator || sumOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionOperator);
+            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionExpressions);
             rootOperator = groupByOperator;
         }
 
@@ -262,8 +268,12 @@ public class QueryPlanBuilder {
             Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
             rootOperator = distinctOperator;
         }
-        
+
         return rootOperator;
+    }
+
+    private Operator scanOperator(String fromTable) throws Exception {
+        return new ScanOperator(fromTable);
     }
 
 }
