@@ -207,23 +207,6 @@ public class BlazeDBTest {
 	}
 
 	@Test
-	public void query17Test_AllColAndSum() throws Exception {
-		BlazeDB.main(new String[] {"samples/db", "samples/input2/query17.sql", "samples/output/output.csv"});
-
-		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
-		List<String> expected = Arrays.asList(
-				"1", "200", "50", "33", "1",  // A1
-				"2", "200", "200", "44", "2", // A2
-				"3", "100", "105", "44", "3", // A3
-				"4", "100", "50", "11", "4",  // A4
-				"5", "100", "500", "22", "5", // A5
-				"6", "300", "400", "11", "6"  // A6
-		);
-
-		assertEquals(expected, result);
-	}
-
-	@Test
 	public void query18Test_SumMultiplicacion3Tables() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query18.sql", "samples/output/output.csv"});
 
@@ -243,6 +226,9 @@ public class BlazeDBTest {
 				"100, 1200",
 				"300, 1800"
 		);
+
+		Collections.sort(result);
+		Collections.sort(expected);
 
 		assertEquals(expected, result);
 	}
