@@ -49,10 +49,10 @@ public class SumOperator extends Operator {
 
             // return tuples depending on GroupBy and Sum
             if (!groupByColumnsNames.isEmpty() && !projectionColumns.isEmpty()) {
-                for (String column : projectionColumns){
-                    tuple.addValue(groupKey.get(0), column);
-                }
+                List<Integer> filteredGroupKey = filterGroupKey(groupKey, groupByColumnsNames, projectionColumns);
+                tuple.addValues(filteredGroupKey, projectionColumns);
                 //tuple.addValues(groupKey, groupByColumnsNames);
+
             }
             if (!sumExpressions.isEmpty()) {
                 tuple.addValues(sums, getSumExpressions(this.sumExpressions));
@@ -99,6 +99,19 @@ public class SumOperator extends Operator {
             }
         }
 
+    }
+
+    private List<Integer> filterGroupKey(List<Integer> groupKey, List<String> groupByColumnsNames, List<String> projectionColumns) {
+        List<Integer> filteredGroupKey = new ArrayList<>();
+
+        for (String projectionColumn : projectionColumns) {
+            int index = groupByColumnsNames.indexOf(projectionColumn);
+            if (index != -1) { // Si la columna proyectada está en groupByColumnsNames
+                filteredGroupKey.add(groupKey.get(index));
+            }
+        }
+
+        return filteredGroupKey;
     }
 
     private List<Integer> getGroupKey(Tuple tuple) {

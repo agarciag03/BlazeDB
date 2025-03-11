@@ -247,6 +247,13 @@ public class QueryPlanBuilder {
             rootOperator = groupByOperator;
         }
 
+        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
+        // if there sum, sum will send the result to the projection
+        if (projectionOperator && !sumOperator && !groupByOperator) {
+            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
+            rootOperator = projectOperator;
+        }
+
         // Order by each element that we have in the list
         if (orderByOperator) {
             for (OrderByElement orderByElement : orderByElements) {
@@ -254,13 +261,6 @@ public class QueryPlanBuilder {
             }
             Operator orderByOperator = new SortOperator(rootOperator, orderByElements);
             rootOperator = orderByOperator;
-        }
-
-        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
-        // if there sum, sum will send the result to the projection
-        if (projectionOperator && !sumOperator && !groupByOperator) {
-            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
-            rootOperator = projectOperator;
         }
 
         // Be carefull, keep distinct at the end of the operators
