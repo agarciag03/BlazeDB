@@ -23,7 +23,7 @@ public class QueryPlanBuilder {
     private List<OrderByElement> orderByElements = new ArrayList<>();
     private List<Expression> groupByElements = new ArrayList<>();
     private Distinct distinctElement;
-    private List <Join> joinsElements = new ArrayList<>();
+    private List <Join> crossProductElements = new ArrayList<>();
 
     // Flags to identify the operators
     private boolean projectionOperator = false;
@@ -96,7 +96,7 @@ public class QueryPlanBuilder {
                 // identify Joins without Conditions
                 if(!hasJoinCondition(join.toString())) {
                     System.out.println("JOIN - CROSS PRODUCT: " + join);
-                    joinsElements.add(join);
+                    crossProductElements.add(join);
                 } else {
                     System.out.println("organise the join conditions in left tree");
 
@@ -182,7 +182,7 @@ public class QueryPlanBuilder {
         if (!this.joinConditions.isEmpty()) {
             this.joinOperator = true;
         }
-        if (!this.joinsElements.isEmpty()) {
+        if (!this.crossProductElements.isEmpty()) {
             this.joinOperator = true;
         }
         if (!this.selectionConditions.isEmpty()) {
@@ -213,6 +213,8 @@ public class QueryPlanBuilder {
         Operator scanOperator = new ScanOperator(fromTable); // It always needs to go for the first table to do left trees
         rootOperator = scanOperator;
 
+
+
         // Joins
         if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
             for (Expression joinCondition : joinConditions) {
@@ -224,6 +226,7 @@ public class QueryPlanBuilder {
             }
         }
 
+
         // 2. Adding the selection operator to optimise the query
         if (selectionOperator) {
             for (Expression selectionCondition : selectionConditions) {
@@ -232,9 +235,9 @@ public class QueryPlanBuilder {
             }
         }
 
-        // Cross products
-        if (joinOperator && !joinsElements.isEmpty()) { // There is a join condition
-            for (Join join : joinsElements) {
+        // Cross products without conditions
+        if (joinOperator && !crossProductElements.isEmpty()) {
+            for (Join join : crossProductElements) {
                 // Identify the table on right side to scan it
                 String rightTableName = join.toString();
                 Operator scanRightTable = scanOperator(rightTableName);
@@ -248,17 +251,16 @@ public class QueryPlanBuilder {
         }
 
         // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
-        // if there sum, sum will send the result to the projection
+        // if there is sum or group by , they will send the result to the projection
+
+        // Should I use the projection by table before Joins?
         if (projectionOperator && !sumOperator && !groupByOperator) {
             Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
             rootOperator = projectOperator;
         }
 
-        // Order by each element that we have in the list
+
         if (orderByOperator) {
-            for (OrderByElement orderByElement : orderByElements) {
-                Expression orderByColumn = orderByElement.getExpression();
-            }
             Operator orderByOperator = new SortOperator(rootOperator, orderByElements);
             rootOperator = orderByOperator;
         }

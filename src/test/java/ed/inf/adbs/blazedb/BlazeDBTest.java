@@ -205,6 +205,16 @@ public class BlazeDBTest {
 	}
 
 	@Test
+	public void query17() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query17.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList();
+
+		assertEquals(expected, result);
+	}
+
+	@Test
 	public void query18Test_SumMultiplicacion3Tables() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query18.sql", "samples/output/output.csv"});
 
@@ -315,4 +325,37 @@ public class BlazeDBTest {
 		assertEquals(expected, result);
 	}
 
+	@Test
+	public void query26() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query26.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1, 200",
+				"2, 400",
+				"3, 300",
+				"4, 400",
+				"5, 500",
+				"6, 1800"
+		);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query27() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query27.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6"
+		);
+
+		assertEquals(expected, result);
+	}
 }

@@ -1,1 +1,1 @@
-SELECT *, SUM(Student.A) FROM Student GROUP BY Student.A;
+SELECT Student.A FROM Student WHERE 1=2
