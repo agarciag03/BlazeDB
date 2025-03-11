@@ -1,0 +1,1 @@
+SELECT User.A, User.X, User.Y, User.Z, Registered.G, Registered.H, Program.B, Program.C FROM User, Registered, Program WHERE User.A = Registered.A AND Registered.G = Program.A;

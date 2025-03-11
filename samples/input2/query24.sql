@@ -1,0 +1,1 @@
+SELECT Registered.A, Registered.G, Registered.H FROM Registered WHERE Registered.G = 201;

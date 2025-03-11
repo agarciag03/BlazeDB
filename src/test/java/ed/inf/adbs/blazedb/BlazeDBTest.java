@@ -1,7 +1,6 @@
 package ed.inf.adbs.blazedb;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Unit tests for BlazeDB.
@@ -286,4 +284,35 @@ public class BlazeDBTest {
 
 		assertEquals(expected, result);
 	}
+
+	@Test
+	public void query24() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query24.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1, 201, 90",
+				"2, 201, 85"
+		);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query25() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query25.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1, 500, 20, 15, 201, 90, 2, 3",
+				"2, 500, 500, 30, 201, 85, 2, 3",
+				"3, 300, 200, 40, 202, 88, 3, 4",
+				"4, 300, 20, 10, 202, 92, 3, 4",
+				"5, 400, 300, 50, 203, 70, 1, 1",
+				"6, 600, 700, 20, 204, 95, 104, 2"
+		);
+
+		assertEquals(expected, result);
+	}
+
 }
