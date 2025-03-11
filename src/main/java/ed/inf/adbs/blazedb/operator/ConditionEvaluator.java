@@ -3,7 +3,6 @@ package ed.inf.adbs.blazedb.operator;
 import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
@@ -11,6 +10,8 @@ import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 public class ConditionEvaluator extends ExpressionDeParser {
     private Expression condition;
     private Tuple tuple;
+    private Tuple leftTuple;
+    private Tuple rightTuple;
     private boolean result;
 
     public ConditionEvaluator(Expression condition) {
@@ -22,70 +23,52 @@ public class ConditionEvaluator extends ExpressionDeParser {
         return evaluateExpression(condition);
     }
 
-    public boolean evaluateJoin(Tuple tuple, BinaryExpression binaryExpression, int rightValue) {
-        this.tuple = tuple;
-        return evaluateJoinExpression(binaryExpression, rightValue);
+    public boolean evaluateJoin(Tuple lefttuple, Tuple rightTuple) {
+        this.leftTuple = lefttuple;
+        this.rightTuple = rightTuple;
+        return evaluateExpression(condition);
     }
 
     private boolean evaluateExpression(Expression expression) {
-        if (expression instanceof AndExpression) {
-            AndExpression andExpr = (AndExpression) expression;
-            return evaluateExpression(andExpr.getLeftExpression()) &&
-                    evaluateExpression(andExpr.getRightExpression());
-        } else {
-            expression.accept(this);
-            return result;
-        }
-    }
-
-    // method for comparisons
-    private void evaluateBinaryExpression(BinaryExpression binaryExpression) {
-        int leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression()); // only integers
-        int rightValue = evaluateExpressionValue(binaryExpression.getRightExpression());
-
-        if (binaryExpression instanceof EqualsTo) {
-            result = leftvalue == rightValue;
-        } else if (binaryExpression instanceof NotEqualsTo) {
-            result = leftvalue != rightValue;
-        } else if (binaryExpression instanceof GreaterThan) {
-            result = leftvalue > rightValue;
-        } else if (binaryExpression instanceof GreaterThanEquals) {
-            result = leftvalue >= rightValue;
-        } else if (binaryExpression instanceof MinorThan) {
-            result = leftvalue < rightValue;
-        } else if (binaryExpression instanceof MinorThanEquals) {
-            result = leftvalue <= rightValue;
-        }
-    }
-
-    // This method is for join condition where we have to compare with right value from the right tuple
-    public boolean evaluateJoinExpression(BinaryExpression binaryExpression, int rightValue) {
-        int leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression()); // only integers
-
-        if (binaryExpression instanceof EqualsTo) {
-            result = leftvalue == rightValue;
-        } else if (binaryExpression instanceof NotEqualsTo) {
-            result = leftvalue != rightValue;
-        } else if (binaryExpression instanceof GreaterThan) {
-            result = leftvalue > rightValue;
-        } else if (binaryExpression instanceof GreaterThanEquals) {
-            result = leftvalue >= rightValue;
-        } else if (binaryExpression instanceof MinorThan) {
-            result = leftvalue < rightValue;
-        } else if (binaryExpression instanceof MinorThanEquals) {
-            result = leftvalue <= rightValue;
-        }
+        expression.accept(this);
         return result;
     }
 
+    private void evaluateBinaryExpression(BinaryExpression binaryExpression) {
+        int leftvalue;
+        int rightValue;
+
+        if (this.tuple != null) { // if it is a projection
+            leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression(), this.tuple);
+            rightValue = evaluateExpressionValue(binaryExpression.getRightExpression(), this.tuple); // changed to
+        } else { // if it is a join
+            leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression(), this.leftTuple); // only integers
+            rightValue = evaluateExpressionValue(binaryExpression.getRightExpression(), this.rightTuple);
+        }
+
+        if (binaryExpression instanceof EqualsTo) {
+            result = leftvalue == rightValue;
+        } else if (binaryExpression instanceof NotEqualsTo) {
+            result = leftvalue != rightValue;
+        } else if (binaryExpression instanceof GreaterThan) {
+            result = leftvalue > rightValue;
+        } else if (binaryExpression instanceof GreaterThanEquals) {
+            result = leftvalue >= rightValue;
+        } else if (binaryExpression instanceof MinorThan) {
+            result = leftvalue < rightValue;
+        } else if (binaryExpression instanceof MinorThanEquals) {
+            result = leftvalue <= rightValue;
+        }
+    }
+
     // extract values from columns: two types columns or longValues
-    private int evaluateExpressionValue(Expression expression) {
+    private int evaluateExpressionValue(Expression expression, Tuple tuple) {
         if (expression instanceof Column) {
             Column column = (Column) expression;
             int columnIndex = tuple.getColumnIndex(column.toString());
             return tuple.getValue(columnIndex);
         } else {
-            // if longValue
+            // if longValue - integer
             return Integer.parseInt(expression.toString());
         }
     }

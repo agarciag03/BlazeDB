@@ -39,21 +39,24 @@ public class ConditionEvaluatorTest {
 
     @Test
     public void testTrueEqualsReference() throws Exception {
+
+        Tuple tuple = new Tuple("10, 200, 50, 33", "Student", new String[]{"A", "B", "C", "D"});
+
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 10");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(tuple));
 
-        condition = CCJSqlParserUtil.parseCondExpression("Student.B = 2000");
+        condition = CCJSqlParserUtil.parseCondExpression("Student.B = 200");
         evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("1, 2000, 50, 33")));
+        assertTrue(evaluator.evaluate(tuple));
 
-        condition = CCJSqlParserUtil.parseCondExpression("Student.C = 500");
+        condition = CCJSqlParserUtil.parseCondExpression("Student.C = 50");
         evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("1, 200, 500, 33")));
+        assertTrue(evaluator.evaluate(tuple));
 
-        condition = CCJSqlParserUtil.parseCondExpression("Student.D = 330");
+        condition = CCJSqlParserUtil.parseCondExpression("Student.D = 33");
         evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 330")));
+        assertTrue(evaluator.evaluate(tuple));
 
     }
 

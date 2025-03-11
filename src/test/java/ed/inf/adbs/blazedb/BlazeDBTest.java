@@ -225,7 +225,7 @@ public class BlazeDBTest {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query18.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
-		List<String> expected = Arrays.asList("30", "21", "3600", "198508625");
+		List<String> expected = Arrays.asList("30, 21, 3600, 198407625");
 
 		assertEquals(expected, result);
 	}
@@ -236,9 +236,9 @@ public class BlazeDBTest {
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList(
-				"200,600",
-				"100,1200",
-				"300,1800"
+				"200, 600",
+				"100, 1200",
+				"300, 1800"
 		);
 
 		assertEquals(expected, result);

@@ -54,22 +54,7 @@ public class JoinOperator extends Operator{
     }
 
     private boolean evaluateJoinCondition(Tuple leftTuple, Tuple rightTuple) {
-        BinaryExpression binaryExpression = (BinaryExpression) joinCondition;
-
-        // extract the rightside value to become it into a selection operator
         ConditionEvaluator conditionEvaluator = new ConditionEvaluator(joinCondition);
-        int rightValue = evaluateExpressionValue(binaryExpression.getRightExpression());
-        return conditionEvaluator.evaluateJoin(leftTuple, binaryExpression, rightValue);
-    }
-
-    private int evaluateExpressionValue(Expression expression) {
-        if (expression instanceof Column) {
-            Column column = (Column) expression;
-            int columnIndex = rightTuple.getColumnIndex(column.toString());
-            return rightTuple.getValue(columnIndex);
-        } else {
-            // if longValue
-            return Integer.parseInt(expression.toString());
-        }
+        return conditionEvaluator.evaluateJoin(leftTuple, rightTuple);
     }
 }

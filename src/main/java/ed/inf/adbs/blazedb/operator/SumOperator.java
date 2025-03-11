@@ -143,20 +143,39 @@ public class SumOperator extends Operator {
         return 0;
     }
 
-    private int multiplicacionExpression(BinaryExpression expr, Tuple tuple) {
+//    private int multiplicacionExpression(BinaryExpression expr, Tuple tuple) {
+//
+//        Expression leftExpression = expr.getLeftExpression();
+//        Column leftColumn = (Column) leftExpression;
+//        int leftValue = tuple.getValue(tuple.getColumnIndex(leftColumn.toString()));
+//
+//        Expression rightExpression = expr.getRightExpression();
+//        Column rightColumn = (Column) rightExpression;
+//        int rightValue = tuple.getValue(tuple.getColumnIndex(rightColumn.toString()));
+//
+//        if (expr instanceof Multiplication) {
+//            return leftValue * rightValue;
+//        }
+//        return 0;
+//    }
 
-        Expression leftExpression = expr.getLeftExpression();
-        Column leftColumn = (Column) leftExpression;
-        int leftValue = tuple.getValue(tuple.getColumnIndex(leftColumn.toString()));
-
-        Expression rightExpression = expr.getRightExpression();
-        Column rightColumn = (Column) rightExpression;
-        int rightValue = tuple.getValue(tuple.getColumnIndex(rightColumn.toString()));
-
-        if (expr instanceof Multiplication) {
+    private int multiplicacionExpression(Expression expr, Tuple tuple) {
+        if (expr instanceof Column) {
+            // Si la expresión es una columna, obtenemos su valor del tuple
+            Column column = (Column) expr;
+            return tuple.getValue(tuple.getColumnIndex(column.toString()));
+        } else if (expr instanceof LongValue) {
+            // Si la expresión es un valor numérico (ej. 5, 10, etc.)
+            return (int) ((LongValue) expr).getValue();
+        } else if (expr instanceof Multiplication) {
+            // Si es una multiplicación, descomponemos en izquierda y derecha recursivamente
+            BinaryExpression multiplication = (BinaryExpression) expr;
+            int leftValue = multiplicacionExpression(multiplication.getLeftExpression(), tuple);
+            int rightValue = multiplicacionExpression(multiplication.getRightExpression(), tuple);
             return leftValue * rightValue;
+        } else {
+            throw new IllegalArgumentException("Tipo de expresión no soportado: " + expr);
         }
-        return 0;
     }
 
     private  List <String> getSumExpressions(List<Function> sumExpressions) {
