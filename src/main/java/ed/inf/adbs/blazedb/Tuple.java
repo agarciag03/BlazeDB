@@ -107,4 +107,7 @@ public class Tuple {
         return columnNames.indexOf(columnName);
     }
 
+    public List<String> getColumnNames() {
+        return columnNames;
+    }
 }

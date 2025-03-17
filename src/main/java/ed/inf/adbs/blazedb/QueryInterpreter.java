@@ -31,7 +31,11 @@ public class QueryInterpreter {
         Statement statement = parsingSQL(inputFile);
         QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
         Operator rootOperator = queryPlanBuilder.buildQueryPlan(statement);
+        long startTime = System.nanoTime();
         execute(rootOperator, outputFile);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;
+        System.out.println("La consulta tomó " + duration + " milisegundos para ejecutarse.");
 
     }
 
@@ -62,6 +66,7 @@ public class QueryInterpreter {
      */
     public static void execute(Operator root, String outputFile) throws Exception {
         try {
+
             // Create a BufferedWriter
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 

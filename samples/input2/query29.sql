@@ -1,0 +1,1 @@
+SELECT DISTINCT Many.A FROM Many, Student WHERE Many.A = 1 AND Student.A = 1 AND Many.A = Student.A;

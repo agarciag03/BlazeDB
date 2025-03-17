@@ -81,7 +81,7 @@ public class SumOperator extends Operator {
     private void processGroupByAndSum() throws Exception {
         Tuple tuple;
 
-        // processing Groupby
+        // processing Groupby based on the columns
         while ((tuple = child.getNextTuple()) != null) {
             List<Integer> groupKey = getGroupKey(tuple);
             groupedTuples.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(tuple);
@@ -89,7 +89,7 @@ public class SumOperator extends Operator {
 
         for (List<Integer> groupKey : groupedTuples.keySet()) {
 
-            // processing Sum
+            // processing Sum based on the group by, using the whole tuple
             if (!sumExpressions.isEmpty()) {
                 List<Tuple> tuples = groupedTuples.get(groupKey);
                 List<Integer> sumValues = computeSums(tuples);

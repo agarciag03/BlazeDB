@@ -12,17 +12,34 @@ public class ProjectOperator extends Operator {
     private List<String> columnItems;
 
 
-    public ProjectOperator(Operator child, List<Expression> selectItems) {
+    public ProjectOperator(Operator child, List<Expression> selectItems, List<String> columns) {
         this.child = child;
-        this.columnItems = new ArrayList<>();
 
-        for (Expression expression : selectItems) {
-            if (expression != null) {
-                Column column = (Column) expression;
-                columnItems.add(column.toString());
+        if (columns == null) {
+            this.columnItems = new ArrayList<>();
+            for (Expression expression : selectItems) {
+                if (expression != null) {
+                    Column column = (Column) expression;
+                    this.columnItems.add(column.toString());
+                }
             }
         }
+
+        if (selectItems == null) {
+            this.columnItems = columns;
+        }
+
+
     }
+
+    // Early projection
+//    public ProjectOperator(Operator child, List<String> columns) {
+//        this.child = child;
+//        //this.columnItems = new ArrayList<>();
+//        this. columnItems = columns;
+//    }
+
+
 
     @Override
     public Tuple getNextTuple() throws Exception {
