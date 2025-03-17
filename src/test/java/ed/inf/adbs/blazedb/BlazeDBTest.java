@@ -219,7 +219,7 @@ public class BlazeDBTest {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query18.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
-		List<String> expected = Arrays.asList("30, 21, 3600, 198407625");
+		List<String> expected = Arrays.asList("30, 21, 3600, 9615100");
 
 		assertEquals(expected, result);
 	}
@@ -279,8 +279,25 @@ public class BlazeDBTest {
 	}
 
 	@Test
-	public void query23Test_JoinConditions3Tables() throws Exception {
+	public void query23Test_JoinConditions3TablesNoOrder() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query23.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1",
+				"1",
+				"1",
+				"2",
+				"3",
+				"4"
+		);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query23Test_JoinConditions3TablesOrder() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query23A.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList(
@@ -355,6 +372,59 @@ public class BlazeDBTest {
 				"5",
 				"6"
 		);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query28() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query28.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList("1", "2", "3", "4", "5", "6");
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query29() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query29.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList("1");
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query30JoinSameTable() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query30.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1, 101, 75, 1, 200, 50, 33, 101, 2, 3",
+				"1, 102, 82, 1, 200, 50, 33, 102, 3, 4",
+				"1, 103, 92, 1, 200, 50, 33, 103, 1, 1",
+				"2, 101, 12, 2, 200, 200, 44, 101, 2, 3",
+				"3, 102, 52, 3, 100, 105, 44, 102, 3, 4",
+				"4, 104, 27, 4, 100, 50, 11, 104, 104, 2"
+		);
+
+		Collections.sort(result);
+		Collections.sort(expected);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query31_JoinNoOrder() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query31.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Files.readAllLines(Paths.get("samples/expected_output/query6.csv"));
+
+		Collections.sort(result);
+		Collections.sort(expected);
 
 		assertEquals(expected, result);
 	}

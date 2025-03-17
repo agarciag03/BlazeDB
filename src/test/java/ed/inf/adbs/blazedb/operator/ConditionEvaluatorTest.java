@@ -207,6 +207,7 @@ public class ConditionEvaluatorTest {
     @Test
     public void testAndCondition2Options() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 1 AND Student.B = 200");
+
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
         assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33")));
         assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33")));
