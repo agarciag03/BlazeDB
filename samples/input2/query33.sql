@@ -1,0 +1,1 @@
+SELECT DISTINCT Enrolled.A, Student.A, Enrolled.E, SUM(1) FROM Student, Enrolled WHERE Enrolled.A = Student.A AND Enrolled.A = 1 GROUP BY Student.A, Enrolled.E ORDER BY Student.A;

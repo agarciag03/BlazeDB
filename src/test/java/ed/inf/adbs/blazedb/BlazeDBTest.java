@@ -428,4 +428,32 @@ public class BlazeDBTest {
 
 		assertEquals(expected, result);
 	}
+
+	@Test
+	public void query32_JoinNoOrder() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query32.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"2",
+				"3",
+				"4",
+				"5",
+				"6"
+		);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query33_Complex() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query33.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"2"
+		);
+		assertEquals(expected, result);
+	}
+
+
 }

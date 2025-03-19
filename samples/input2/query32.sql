@@ -1,0 +1,1 @@
+SELECT DISTINCT Student.A FROM Student, Enrolled WHERE Enrolled.A <= Student.A;

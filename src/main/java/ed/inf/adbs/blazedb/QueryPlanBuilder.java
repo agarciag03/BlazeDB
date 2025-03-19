@@ -123,149 +123,6 @@ public class QueryPlanBuilder {
 
         // Organise the join conditions in the left tree and in right order of conditions.
 
-        //Implementation #1
-//        if (joinsExpressions != null) {
-//            for (String tableName : queryTables.keySet()) {
-//                // identify Joins without Conditions
-//                if (!joinConditions.isEmpty()) {
-//                    joinElements.add(getJoinCondition(tableName));
-//                    System.out.println("JOIN: " + joinElements);
-//                }
-//            }
-//        }
-
-        //Implementation #2
-//        if (joinsExpressions != null) { // there is join expressions
-//            for (String tableName : queryTables.keySet()) { // tables in order to left to right
-//                // identify Joins without Conditions
-//                if (!joinConditions.isEmpty()) { // there is join conditions which is the same than JoinExpressions - CHECK
-//
-//                    for (Expression joinCondition : joinConditions) {
-//                        BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-//                        Column leftExpression = (Column) joinExpression.getLeftExpression();
-//                        Column rightExpression = (Column) joinExpression.getRightExpression();
-//
-//                        String leftTable = leftExpression.getTable().getName();
-//                        String rightTable = rightExpression.getTable().getName();
-//
-//                        // Verifica si una de las tablas es la actual en el bucle
-//                        if (leftTable.equals(tableName) || rightTable.equals(tableName)) {
-//
-//                            // Revisa si el orden está incorrecto (rightTable debería estar después de leftTable)
-//                            if (queryTables.containsKey(rightTable) && queryTables.containsKey(leftTable)
-//                                    && getTableIndex(leftTable) > getTableIndex(rightTable)) {
-//
-//                                // Intercambia la expresión para que quede en el orden correcto
-//                                BinaryExpression correctedJoin = new EqualsTo();
-//                                correctedJoin.setLeftExpression(rightExpression);
-//                                correctedJoin.setRightExpression(leftExpression);
-//
-//                                // Reemplaza la expresión original por la corregida
-//                                joinConditions.remove(joinCondition);
-//                                joinElements.add(correctedJoin);
-//                            }
-//                        }
-//                    }
-//
-//                    //joinElements.add(getJoinCondition(tableName));
-//                    System.out.println("JOIN: " + joinElements);
-//                }
-//            }
-//        }
-
-        //Implementation #3
-//        if (joinsExpressions != null) { // there is join expressions
-//            for (String tableName : queryTables.keySet()) { // tables in order to left to right
-//
-//
-//                // identify Joins without Conditions
-//                if (!joinConditions.isEmpty()) {
-//                    Iterator<Expression> iterator = joinConditions.iterator();
-//                    while (iterator.hasNext()) {
-//                        Expression joinCondition = iterator.next();
-//                        BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-//                        Column leftExpression = (Column) joinExpression.getLeftExpression();
-//                        Column rightExpression = (Column) joinExpression.getRightExpression();
-//
-//                        String leftTable = leftExpression.getTable().getName();
-//                        String rightTable = rightExpression.getTable().getName();
-//
-//                        // Verifica si una de las tablas es la actual en el bucle
-//                        if (leftTable.equals(tableName) || rightTable.equals(tableName)) {
-//
-//                            // Verifica si el orden está incorrecto
-//                            if (queryTables.containsKey(rightTable) && queryTables.containsKey(leftTable)
-//                                    && getTableIndex(leftTable) > getTableIndex(rightTable)) {
-//
-//                                // Crea la nueva expresión corregida
-//                                // BE CAREFULL CHECK WITH lowerthan, or greaterthan
-//
-//                                BinaryExpression correctedJoin = new EqualsTo();
-//                                correctedJoin.setLeftExpression(rightExpression);
-//                                correctedJoin.setRightExpression(leftExpression);
-//
-//                                // Elimina el elemento actual de la lista de forma segura
-//                                joinConditions.remove(joinCondition);
-//
-//                                // Agrega la nueva condición corregida
-//                                joinElements.add(correctedJoin);
-//
-//
-//                            } else { // si el orden es correcto
-//                                joinConditions.remove(joinCondition);
-//                                joinElements.add(joinCondition);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
-        //Implementation #4
-//        if (joinsExpressions != null) { // Hay expresiones de JOIN
-//            for (String tableName : queryTables.keySet()) { // Tablas en orden de izquierda a derecha
-//
-//                boolean modified;
-//                do {
-//                    modified = false; // Indicador de cambios en la lista
-//                    Iterator<Expression> iterator = joinConditions.iterator();
-//
-//                    while (iterator.hasNext()) {
-//                        Expression joinCondition = iterator.next();
-//                        BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-//                        Column leftExpression = (Column) joinExpression.getLeftExpression();
-//                        Column rightExpression = (Column) joinExpression.getRightExpression();
-//
-//                        String leftTable = leftExpression.getTable().getName();
-//                        String rightTable = rightExpression.getTable().getName();
-//
-//                        // Verifica si la condición de JOIN involucra la tabla actual
-//                        if (leftTable.equals(tableName) || rightTable.equals(tableName)) {
-//
-//                            // Verifica si el orden está incorrecto
-//                            if (queryTables.containsKey(rightTable) && queryTables.containsKey(leftTable)
-//                                    && getTableIndex(leftTable) > getTableIndex(rightTable)) {
-//
-//                                // Corrige la expresión de JOIN
-//                                BinaryExpression correctedJoin = new EqualsTo();
-//                                correctedJoin.setLeftExpression(rightExpression);
-//                                correctedJoin.setRightExpression(leftExpression);
-//
-//                                iterator.remove();  // ✅ Elimina de manera segura
-//                                joinElements.add(correctedJoin);
-//                                modified = true; // Hubo un cambio, repetir el bucle
-//
-//                            } else { // Si el orden es correcto
-//                                iterator.remove();  // ✅ Elimina de manera segura
-//                                joinElements.add(joinCondition);
-//                                modified = true; // Hubo un cambio, repetir el bucle
-//                            }
-//                        }
-//                    }
-//                } while (modified); // Si se hizo un cambio, vuelve a recorrer la lista
-//            }
-//        }
-
         // Implementation #5
         if (joinsExpressions != null) { // Hay expresiones de JOIN
             for (String tableName : queryTables.keySet()) { // Tablas en orden de izquierda a derecha
@@ -290,18 +147,18 @@ public class QueryPlanBuilder {
 
                             // Corrige la expresión según el tipo de operador
                             BinaryExpression correctedJoin;
-                            if (joinExpression instanceof EqualsTo) {
+                            if (joinExpression instanceof EqualsTo) { // equals is the same swapping the columns
                                 correctedJoin = new EqualsTo();
                             } else if (joinExpression instanceof NotEqualsTo) {
                                 correctedJoin = new NotEqualsTo();
                             } else if (joinExpression instanceof GreaterThan) {
-                                correctedJoin = new MinorThan(); // `>` se convierte en `<`
+                                correctedJoin = new MinorThanEquals(); // `>` transforms into `<=`
                             } else if (joinExpression instanceof GreaterThanEquals) {
-                                correctedJoin = new MinorThanEquals(); // `>=` se convierte en `<=`
+                                correctedJoin = new MinorThan(); // `>=` transforms into `<`
                             } else if (joinExpression instanceof MinorThan) {
-                                correctedJoin = new GreaterThan(); // `<` se convierte en `>`
+                                correctedJoin = new GreaterThanEquals(); // `<` transforms into `>=`
                             } else { // MinorThanEquals
-                                correctedJoin = new GreaterThanEquals(); // `<=` se convierte en `>=`
+                                correctedJoin = new GreaterThan(); // `<=` transforms into `>`
                             }
 
                             correctedJoin.setLeftExpression(rightExpression);
@@ -345,8 +202,8 @@ public class QueryPlanBuilder {
             System.out.println("GROUP BY: " + groupByElements);
         }
 
-        // Identify all the expression - columns needed for each table
-        identifyExpressions();
+
+
     }
 
     private int getTableIndex(String tableName) {
@@ -364,6 +221,7 @@ public class QueryPlanBuilder {
         List<Expression> expressions = new ArrayList<>();
         expressions.addAll(projectionExpressions);
         expressions.addAll(selectionConditions);
+        // check there is not elements here to identify the projections
         expressions.addAll(joinConditions);
         //expressions.add((Expression) joinElements);
         expressions.addAll(sumExpressions);
@@ -571,6 +429,11 @@ public class QueryPlanBuilder {
     public Operator buildQueryPlan(Statement statement) throws Exception {
         identifyElementsOperators(statement);
         checkOperators();
+
+        // For optimisation purposes, we can identify the columns that are mentioned in the query
+        if (projectionOperator) {
+            identifyExpressions();
+        }
 
         rootOperator = null; // Reset the root operator
 
