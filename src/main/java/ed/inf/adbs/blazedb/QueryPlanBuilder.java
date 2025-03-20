@@ -44,6 +44,7 @@ public class QueryPlanBuilder {
     private boolean orderByOperator = false;
     private boolean groupByOperator = false;
     private boolean sumOperator = false;
+    private boolean isAlwaysFalse = false;
 
     private Operator rootOperator;
 
@@ -363,26 +364,52 @@ public class QueryPlanBuilder {
 
     private void identifyWhereExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
+            BinaryExpression binaryExpression = (BinaryExpression) expression;
 
             // Identify Joins
-            if (isJoinCondition((BinaryExpression) expression)) {
+            if (isJoinCondition(binaryExpression)) {
                 //this.joinConditions.add(expression);
                 this.joinConditions.add(0, expression);
                 System.out.println("JOIN: " + expression);
-            } else {
+//            } else {
+//
+//                this.selectionConditions.add(expression);
+//
+//                //new implementation
+//                  if (binaryExpression.getLeftExpression() instanceof Column) {
+//                    Column column = (Column) binaryExpression.getLeftExpression();
+//                    String columnName = column.getTable().getName();
+//                    selectionColumns.put(columnName, expression);
+//                } else {
+//                    // no columns - long values
+//                    selectionColumns.put("-1", expression);
+//                }
+//                System.out.println("WHERE: " + expression);
+//            }
+            } else if(binaryExpression.getLeftExpression() instanceof Column) {
+                // Identify Selections
+                Column column = (Column) binaryExpression.getLeftExpression();
+                String columnName = column.getTable().getName();
+                selectionColumns.put(columnName, expression);
+                this.selectionConditions.add(expression);
+
+            } else if (binaryExpression.getLeftExpression() instanceof LongValue){
+                // Identify trivial selections and analyse them
+
+                Integer leftValue = (int) ((LongValue) binaryExpression.getLeftExpression()).getValue();
+                Integer rightValue = (int) ((LongValue) binaryExpression.getRightExpression()).getValue();
+
+                if (leftValue != rightValue) {
+                    // Trivial query
+                    System.out.println("Trivial query: " + expression);
+                    isAlwaysFalse = true;
+                }
+
 
                 this.selectionConditions.add(expression);
 
-                //new implementation
-                BinaryExpression binaryExpression = (BinaryExpression) expression;
-                if (binaryExpression.getLeftExpression() instanceof Column) {
-                    Column column = (Column) binaryExpression.getLeftExpression();
-                    String columnName = column.getTable().getName();
-                    selectionColumns.put(columnName, expression);
-                } else {
-                    // no columns - long values
-                    selectionColumns.put("-1", expression);
-                }
+                //OPTIMISATION: Trivial query. Here we want to avoid to avoid operation that are not needed in the query, in case of 1 = 2
+
                 System.out.println("WHERE: " + expression);
             }
         }
@@ -447,6 +474,12 @@ public class QueryPlanBuilder {
     public Operator buildQueryPlan(Statement statement) throws Exception {
 
         identifyElementsOperators(statement);
+
+        // OPTIMISATION: Trivial query. Here we want to avoid to avoid operation that are not needed in the query, in case of 1 = 2
+        if (isAlwaysFalse) {
+            return null;
+        }
+
         identifyOperators();
 
         // For optimisation purposes, if query has projectionOperator true, it means that we could apply some projections before applying other operators

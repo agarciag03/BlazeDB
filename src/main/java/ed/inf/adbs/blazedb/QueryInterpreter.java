@@ -36,8 +36,10 @@ public class QueryInterpreter {
         QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
         Operator treeOperator = queryPlanBuilder.buildQueryPlan(statement);
 
-        // Executing the query plan
+        // Executing the query plan:
         execute(treeOperator, outputFile);
+
+
     }
 
     /**
@@ -71,12 +73,18 @@ public class QueryInterpreter {
             // Create a BufferedWriter
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 
-            // Iterate over the tuples produced by root
-            Tuple tuple = root.getNextTuple();
-            while (tuple != null) {
-                writer.write(tuple.toString());
-                writer.newLine();
-                tuple = root.getNextTuple();
+            if (root != null) {
+                // Iterate over the tuples produced by root
+                Tuple tuple = root.getNextTuple();
+                while (tuple != null) {
+                    writer.write(tuple.toString());
+                    writer.newLine();
+                    tuple = root.getNextTuple();
+                }
+            } else {
+                // The root will be null if an always-false (trivial) condition is detected during query planning.
+                // Therefore, an empty string will be written to the output file without need to compute the query plan.
+                writer.write("");
             }
 
             // Close the writer

@@ -11,7 +11,9 @@ in a method
 here we identify 3 types of conditions:
 * Joins: when there are two different table in the condition. For instance: Student.A = Enrolled.A
 * Selections: Here we can find conditions that involves just one table, in this case it could be one columns or two columns in the same table. For instance: Student.A = 1 or Student.A = Student.C. We 
-2. Identify the join order through the joins in the parsing.
+* Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
+
+3. Identify the join order through the joins in the parsing.
 3. Organise the joins in order to just to left to right joins based on the order of the tables in the FROM clause.
 4. Check if the join is in a correct way in terms of order of the join, to apply the left tree, keeping the scanned tables on the left side and scanning the new tables on the right side, so swapping them if it is needed. For example: From S, R Where R.A = S.A, here I swap the join transform it into S.A = R.A. 
 5. Identify the join conditions  because comparisons like = or != are not affected when swapping the tables, but comparisons like >, <, >=, <=, are affected, so I need to swap the comparison operators as well.
@@ -23,7 +25,8 @@ The steps that I considered for the optimization rules and reducing intermediate
 transform query plans:
 swap operators in the following order
 
-0. Check trivial select 
+0. (Before create the query plan, we can identify this kind) Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
+
 1. Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. 
 2. new instances - Projection Pushdown: Where there are projections in the query....
 * Projections before joins can reduce intermediate results working just in the columns needed.
