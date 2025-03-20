@@ -23,16 +23,18 @@ public class JoinOperator extends Operator{
     @Override
     public Tuple getNextTuple() throws Exception {
         if (leftTuple == null) {
-            leftTuple = leftChild.getNextTuple();
+            leftTuple = leftChild.getNextTuple(); // Get the first tuple from the left child
         }
 
+        // the join should scan the left (outer) child once, and for each tuple in the outer child, it should scan the inner child
+        //completely (finally a use for the reset() method
         while (leftTuple != null) {
             rightTuple = rightChild.getNextTuple();
-            while (rightTuple != null) {
+            while (rightTuple != null) { // Cross product
                 if (joinCondition == null) {
                     // cross product
                     return leftTuple.join(rightTuple);
-                } else if (evaluateJoinCondition(leftTuple, rightTuple)) {
+                } else if (evaluateJoinCondition(leftTuple, rightTuple)) { // If join condition, the tuple is only returned if it matches the join condition
                     return leftTuple.join(rightTuple);
                 }
                 // if they dont match, get the next right tuple

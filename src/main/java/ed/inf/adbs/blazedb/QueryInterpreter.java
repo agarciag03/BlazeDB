@@ -24,38 +24,39 @@ public class QueryInterpreter {
      */
     public static void interpretQuery(String databaseDir, String inputFile, String outputFile) throws Exception {
 
-        // Loading all table that we have in the schema
+        // Loading all table that we have in the schema to the catalog
         Catalog catalog = Catalog.getInstance();
         catalog.loadSchema(databaseDir);
 
-        Statement statement = parsingSQL(inputFile);
-        QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
-        Operator rootOperator = queryPlanBuilder.buildQueryPlan(statement);
-        long startTime = System.nanoTime();
-        execute(rootOperator, outputFile);
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1000000;
-        System.out.println("La consulta tomó " + duration + " milisegundos para ejecutarse.");
+        // Reading the SQL statement from the input file
+        Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
+        System.out.println(inputFile + ": " + statement);
 
+        // Building the query plan
+        QueryPlanBuilder queryPlanBuilder = new QueryPlanBuilder();
+        Operator treeOperator = queryPlanBuilder.buildQueryPlan(statement);
+
+        // Executing the query plan
+        execute(treeOperator, outputFile);
     }
 
     /**
      * Reads SQL statement from query file and parses it using the CCJSqlParserUtil.
      * This method catches any exceptions that occur during parsing and prints an error message.
      */
-    private static Statement parsingSQL(String inputFile) throws Exception {
-        try {
-            Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
-            System.out.println(inputFile + ": " + statement);
-
-            return statement;
-
-        } catch (Exception e) {
-            System.err.println("Exception occurred during parsing");
-            e.printStackTrace();
-            return null;
-        }
-    }
+//    private static Statement parsingSQL(String inputFile) throws Exception {
+//        try {
+//            Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
+//            System.out.println(inputFile + ": " + statement);
+//
+//            return statement;
+//
+//        } catch (Exception e) {
+//            System.err.println("Exception occurred during parsing");
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
 
     /**
      * Executes the provided query plan by repeatedly calling `getNextTuple()`

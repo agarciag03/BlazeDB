@@ -12,7 +12,14 @@ public class Tuple {
     private List<String> columnNames = new ArrayList<>();
     private List<Integer> values;
 
-    // Constructor #1 of tuples
+    // Constructor #1 of tuples:
+
+
+    /**
+     * This constructor takes a line of data and splits it by commas to create a tuple which is List<Integer>. This constructor doesn't have column names.
+     * @param line The line of data to be split by commas
+     */
+
     public Tuple (String line){
         values = new ArrayList<>();
         for (String value : line.split(",")){

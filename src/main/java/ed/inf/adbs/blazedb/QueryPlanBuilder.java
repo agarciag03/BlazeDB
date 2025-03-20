@@ -55,6 +55,7 @@ public class QueryPlanBuilder {
      */
     public void identifyElementsOperators(Statement statement) {
 
+        // It is assumed that  all the Statements are Selects
         Select select = (Select) statement; // Statement is always a Select
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
 
@@ -63,10 +64,18 @@ public class QueryPlanBuilder {
         queryTables.put(plainSelect.getFromItem().toString(), false);
 
         // 1. identifying projection (or AllColumns) and SUM Operator
+        // list of SelectItem objects, where each one is either AllColumns
+        //(for a SELECT * ) or a SelectExpressionItem.
         List<SelectItem> selectItems = (List<SelectItem>) (List<?>) plainSelect.getSelectItems();
         for (SelectItem selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllColumns) {
-                System.out.println("SELECT: AllCollumns");
+                System.out.println("SELECT: AllCollumns"); // no projections needed
+
+            } else if (selectItem.getExpression() instanceof Column) {
+                // SelectExpressionItem will always be a Column
+                // selectItem could be a number or a column
+                projectionExpressions.add(selectItem.getExpression());
+                System.out.println("SELECT:  " + selectItem.getExpression());
 
             } else if (selectItem.getExpression() instanceof Function) {
                 // sum is always instance as a Function
@@ -80,17 +89,13 @@ public class QueryPlanBuilder {
 
                     System.out.println("SUM:  " + function.getParameters());
                 }
-            } else if (selectItem.getExpression() instanceof Column) {
-                // selectItem could be a number or a column
-                projectionExpressions.add(selectItem.getExpression());
-                System.out.println("SELECT:  " + selectItem.getExpression());
-
             } else {
                 System.out.println(" This select function is not allowed: " + selectItem);
             }
         }
 
-        // 2. Identify Joins
+        // strategy for extracting join conditions from the WHERE clause and evaluating
+        //them as part of the join
 
         // 2. Identifying the selections and joins conditions
         Expression whereExpressions = plainSelect.getWhere(); //the condition in the WHERE clause
@@ -110,7 +115,7 @@ public class QueryPlanBuilder {
             for (Join join : joinsExpressions) {
                 queryTables.put(join.toString(), false); // Identifying the tables in the query
 
-                // identify Joins without Conditions
+                // identify Joins without Conditions - Join tables without conditions are cross products
                 if(!hasJoinCondition(join.toString())) {
                     System.out.println("JOIN - CROSS PRODUCT: " + join);
                     crossProductElements.add(join);
@@ -218,6 +223,11 @@ public class QueryPlanBuilder {
     }
 
     private void identifyExpressions() {
+
+        //About Orderby: You may also assume that the attributes mentioned in the ORDER BY are a subset of
+        //those retained by the SELECT.  So we don't need to consider the columns in the ORDER BY clause, projection is enough. A query like SELECT
+        //S.A FROM S ORDER BY S.B is valid SQL, but we choose not to support it in this project.
+
         List<Expression> expressions = new ArrayList<>();
         expressions.addAll(projectionExpressions);
         expressions.addAll(selectionConditions);
@@ -353,11 +363,14 @@ public class QueryPlanBuilder {
 
     private void identifyWhereExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
+
+            // Identify Joins
             if (isJoinCondition((BinaryExpression) expression)) {
                 //this.joinConditions.add(expression);
                 this.joinConditions.add(0, expression);
                 System.out.println("JOIN: " + expression);
             } else {
+
                 this.selectionConditions.add(expression);
 
                 //new implementation
@@ -396,7 +409,7 @@ public class QueryPlanBuilder {
         return false;
     }
 
-    private void checkOperators() {
+    private void identifyOperators() {
 
         if (!this.projectionExpressions.isEmpty() ) {
             this.projectionOperator = true;
@@ -419,23 +432,31 @@ public class QueryPlanBuilder {
         if (this.distinctElement != null) {
             this.distinctOperator = true;
         }
-
         if (!this.groupByElements.isEmpty()) {
             this.groupByOperator = true;
         }
-
     }
 
-    public Operator buildQueryPlan(Statement statement) throws Exception {
-        identifyElementsOperators(statement);
-        checkOperators();
 
-        // For optimisation purposes, we can identify the columns that are mentioned in the query
+    /// ////////////////////////////////////
+    /// ////////////////////////////////////
+    /// ////////////////////////////////////
+
+
+
+    public Operator buildQueryPlan(Statement statement) throws Exception {
+
+        identifyElementsOperators(statement);
+        identifyOperators();
+
+        // For optimisation purposes, if query has projectionOperator true, it means that we could apply some projections before applying other operators
         if (projectionOperator) {
             identifyExpressions();
         }
 
-        rootOperator = null; // Reset the root operator
+        // Building a tree of operators. RootOperator is the variable that contains the whole tree.
+        // Reset the root operator to start with the query plan
+        rootOperator = null;
 
         // 1. Scan the first table that we have in the FROM clause
         // 2. If there is any selection condition for this table, apply it
@@ -445,13 +466,13 @@ public class QueryPlanBuilder {
         rootOperator = scanRelation(queryTables.keySet().iterator().next());
 
 // 3. Apply the selections without columns. Ex: 1=1 or 2=1
-        if (selectionOperator) {
-            List<Expression> selectionsWithoutTable = getSelectionCondition("-1"); // -1 means no columns
-            for (Expression selectionCondition : selectionsWithoutTable) {
-                Operator selectOperator = new SelectOperator(rootOperator, selectionCondition);
-                rootOperator = selectOperator;
-            }
-        }
+//        if (selectionOperator) {
+//            List<Expression> selectionsWithoutTable = getSelectionCondition("-1"); // -1 means no columns
+//            for (Expression selectionCondition : selectionsWithoutTable) {
+//                Operator selectOperator = new SelectOperator(rootOperator, selectionCondition);
+//                rootOperator = selectOperator;
+//            }
+//        }
 
         // 4. After having all the selections applied, we can make the joins
         // Joins should do it in order based on Joins in the query. DONE
@@ -485,6 +506,7 @@ public class QueryPlanBuilder {
         // if there is sum or group by , they will send the result to the projection
 
         // Should I use the projection by table before Joins?
+        // We use projections if neither sum nor group by are present, otherwise, the projection will be done in the SumOperator
         if (projectionOperator && !sumOperator && !groupByOperator) {
             Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions, null);
             rootOperator = projectOperator;
@@ -500,17 +522,16 @@ public class QueryPlanBuilder {
             }
         }
 
-        // blocking
+        // blocking Operato
         if (groupByOperator || sumOperator) {
             Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionExpressions);
             rootOperator = groupByOperator;
         }
 
-        // we can assume that order operator can be after projection.
-        if (orderByOperator) {
-            Operator orderByOperator = new SortOperator(rootOperator, orderByElements);
-            rootOperator = orderByOperator;
-        }
+        // Here we apply the last projection to keep the columns as the user requested and reduce the number of intermediate results
+        // This project is the original one to leave the columns as the user requested
+
+
 
         // Last selection
 //        if (selectionOperator) {
@@ -527,15 +548,37 @@ public class QueryPlanBuilder {
             rootOperator = distinctOperator;
         }
 
+
+        // we can assume that order operator can be after projection.- It is good to delay sorting as late as possible, in
+        //particular to do it after the projection(s), because there will be less data to sort that way.
+        if (orderByOperator) {
+            Operator orderByOperator = new SortOperator(rootOperator, orderByElements);
+            rootOperator = orderByOperator;
+        }
+
         return rootOperator;
     }
 
+
+    // non-optional scan operator
     private Operator scanRelation(String fromTable) throws Exception {
 
         // 1. Scan Table
         Operator root = new ScanOperator(fromTable);
 
+        // OPTIMISATION: Trivial query. Here we avoid to avoid operation that are not needed in the query, in case of 1 = 2
+        if (selectionOperator) { // if there is a selection condition
+            List<Expression> selectionsWithoutTable = getSelectionCondition("-1"); // -1 means no columns
+            for (Expression selectionCondition : selectionsWithoutTable) {
+                Operator selectOperator = new SelectOperator(root, selectionCondition);
+                root = selectOperator;
+            }
+        }
+
+
 // OPTIMISATION: if there is a selection condition for this table, apply it
+        // Obviously it is most efficient to evaluate the selections as
+        //early as possible
         if (selectionColumns.containsKey(fromTable)) {
             List<Expression> selectionsForTable = getSelectionCondition(fromTable);
 
@@ -545,7 +588,8 @@ public class QueryPlanBuilder {
             }
         }
 
-        // OPTIMISATION: if there is a selection for this table, apply it
+        // OPTIMISATION: if there are projections in the select we could apply including the columns that are needed for the subsequent operators. It is a way to reduce the intermediate results
+
 //        if (projectionOperator) {
 //            if (tableColumnsMentioned.containsKey(fromTable)) {
 //

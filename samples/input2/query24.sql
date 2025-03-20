@@ -1,1 +1,1 @@
-SELECT Registered.A, Registered.G, Registered.H FROM Registered WHERE Registered.G = 201;
+SELECT R.A, R.G, R.H FROM R WHERE R.G = 201;

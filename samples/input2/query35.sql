@@ -1,0 +1,1 @@
+SELECT * FROM Student WHERE Student.B = Student.C;

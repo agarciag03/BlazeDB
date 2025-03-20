@@ -47,13 +47,20 @@ public class SumOperator extends Operator {
             List<Integer> sums = aggregateResults.get(groupKey);
             Tuple tuple = new Tuple();
 
+            // The SUM functions, if present, can reference any columns, including non-group-by columns. so we could have either group-by columns or sum columns or both
+            // therefore, here, the result returned will depend on the presence of group-by columns and sum columns
+
             // return tuples depending on GroupBy and Sum
+            // The SELECT list can only list group-by columns but not necessarily all of them, so here we check if the projectionColumns are empty, if no, there are some columns to project
+            // some group-by columns can be omitted from the output
             if (!groupByColumnsNames.isEmpty() && !projectionColumns.isEmpty()) {
                 List<Integer> filteredGroupKey = filterGroupKey(groupKey, groupByColumnsNames, projectionColumns);
                 tuple.addValues(filteredGroupKey, projectionColumns);
                 //tuple.addValues(groupKey, groupByColumnsNames);
 
             }
+
+
             if (!sumExpressions.isEmpty()) {
                 tuple.addValues(sums, getSumExpressions(this.sumExpressions));
             }
@@ -81,14 +88,15 @@ public class SumOperator extends Operator {
     private void processGroupByAndSum() throws Exception {
         Tuple tuple;
 
-        // processing Groupby based on the columns
+        // processing Groupby based on the columns - organizes tuples into
+        //groups
         while ((tuple = child.getNextTuple()) != null) {
             List<Integer> groupKey = getGroupKey(tuple);
             groupedTuples.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(tuple);
         }
 
         for (List<Integer> groupKey : groupedTuples.keySet()) {
-
+            // for each group computes aggregate values
             // processing Sum based on the group by, using the whole tuple
             if (!sumExpressions.isEmpty()) {
                 List<Tuple> tuples = groupedTuples.get(groupKey);
@@ -139,6 +147,7 @@ public class SumOperator extends Operator {
         return sums;
     }
 
+    // Instructions: Each SUM can take as argument one term (integer or column) or a product of terms.(BinaryExpression)
     private int evaluateSum(Expression expression, Tuple tuple) {
         if (expression instanceof Function) {
             ExpressionList parameters = ((Function) expression).getParameters();

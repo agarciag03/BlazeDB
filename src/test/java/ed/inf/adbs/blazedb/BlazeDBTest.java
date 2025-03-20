@@ -360,7 +360,7 @@ public class BlazeDBTest {
 	}
 
 	@Test
-	public void query27() throws Exception {
+	public void query27_trivialQuery() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query27.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
@@ -371,6 +371,18 @@ public class BlazeDBTest {
 				"4",
 				"5",
 				"6"
+		);
+
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query27A_trivialQuery() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query27A.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+
 		);
 
 		assertEquals(expected, result);
@@ -451,6 +463,29 @@ public class BlazeDBTest {
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList(
 				"2"
+		);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query34_DistinctAllCol() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query34.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"1, 500, 20, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1",
+				"2, 100, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1"
+		);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void query35_SelectionSameTable() throws Exception {
+		BlazeDB.main(new String[] {"samples/db", "samples/input2/query35.sql", "samples/output/output.csv"});
+
+		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
+		List<String> expected = Arrays.asList(
+				"2, 200, 200, 44"
 		);
 		assertEquals(expected, result);
 	}

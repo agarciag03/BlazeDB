@@ -41,7 +41,7 @@ public class ConditionEvaluator extends ExpressionDeParser {
         if (this.tuple != null) { // if it is a projection
             leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression(), this.tuple);
             rightValue = evaluateExpressionValue(binaryExpression.getRightExpression(), this.tuple); // changed to
-        } else { // if it is a join
+        } else { // if it is a join it means that we have two tuples
             leftvalue = evaluateExpressionValue(binaryExpression.getLeftExpression(), this.leftTuple); // only integers
             rightValue = evaluateExpressionValue(binaryExpression.getRightExpression(), this.rightTuple);
         }
@@ -68,7 +68,7 @@ public class ConditionEvaluator extends ExpressionDeParser {
             int columnIndex = tuple.getColumnIndex(column.toString());
             return tuple.getValue(columnIndex);
         } else {
-            // if longValue - integer
+            // When the WHERE condition contains an integer instead of a column.
             return Integer.parseInt(expression.toString());
         }
     }

@@ -51,7 +51,16 @@ public class ProjectOperator extends Operator {
         child.reset();
     }
 
-    // Method to project a tuple based on the column indexes
+    // Method to project a tuple based on the column indexes - extracts only desired values into a new tuple, and
+    //returns that tuple
+
+    /**
+     * This method projects a tuple based on the column indexes - extracts only desired values into a new tuple, and
+     * returns that tuple
+     * @param tuple The tuple to be projected
+     * @param columnItems The list of column names to be projected
+     * @return The projected tuple
+     */
     public Tuple projectTuple(Tuple tuple, List<String> columnItems) {
         if (tuple != null) {
             Tuple projectedTuple = new Tuple();

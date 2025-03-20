@@ -1,1 +1,1 @@
-SELECT User.A, User.X, User.Y, User.Z, Registered.G, Registered.H, Program.B, Program.C FROM User, Registered, Program WHERE User.A = Registered.A AND Registered.G = Program.A;
+SELECT U.A, U.X, U.Y, U.Z, R.G, R.H, P.B, P.C FROM U, R, P WHERE U.A = R.A AND R.G = P.A;

@@ -37,6 +37,8 @@ public class SortOperator extends Operator{
         return tuples;
     }
 
+    // Instructions: sort in ascending order only.
+    // CompareTo method is used to sort the tuples in ascending order
     public List<Tuple> sortTuples(List<Tuple> tuples) {
         Collections.sort(tuples, new Comparator<Tuple>() {
             @Override
