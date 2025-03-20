@@ -25,23 +25,28 @@ The steps that I considered for the optimization rules and reducing intermediate
 transform query plans:
 swap operators in the following order
 
-### step 0
+### Strategy 1
 1. (Before create the query plan, we can identify this kind) Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
 
-### Step 1
+### Strategy 2
 in the scan: 
-1. Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. 
-2. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections needed in the following task  
-3. 
-4. 
-5. no done, or needed of rsubsequent task. 
+1. All Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. After selection is done, the program will mark the column used this selection as noNeeded for early projection.
+3. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections needed in the following task   
 In if the selection was done in the step before, we delete these columns. 
 Just keep the columns needed for the next operator and the final result.
 
+### Strategy 3 - Joins
+* Projections before joins can reduce intermediate results working just in the columns needed. Therefore, the joins with conditions are done just with the columns needed for the join and following operator
+* After joins with conditions are done, the program will apply all the projections for crossproduct. It is done with the intention to minimise the crossproduct result. It is allowed if neither sum or group by operator is active. 
 
-* Projections before joins can reduce intermediate results working just in the columns needed.
-* 
-* 
+### Strategy 5 - Distinct before order by
+* This strategy intends to reduce the number of tuples that should be sorted in the orderBy operator. Keeping just the tuples that finally are required for the user.
+
+Note: all the strategies mentioned here are in the code with a comment starting like: OPTIMISATION.
+
+
+READ
+* All projections
 * Be carefull projections should be apply at the beginning but also at the end, because there could be columns that are needed for operators like joins, groupby, orderby, etc and they should be taken away from the intermediate results at the end of the query.
  - This is to leave the result as user is expecting and reduce the intermediate results before distinct and order by operators.
 4. distinctOperator before order by to reduce the number of tuples that are passed to this operator that in fact block the whole database
@@ -50,5 +55,3 @@ Just keep the columns needed for the next operator and the final result.
    means it really needs to see all of its input before producing any output  - Order by is the last operator to apply and it is only apply where it is required in order to avoid unnecessary sorting of the tuples. We can leave the sorting at the end since the instructions "You may also assume that the attributes mentioned in the ORDER BY are a subset of
    those retained by the SELECT. This allows you to do the sorting last, after projection." Otherwise we should check if a new projection would be needed to release the results that the user is expecting. It is good to delay sorting as late as possible, in
    particular to do it after the projection(s), because there will be less data to sort that way.
-
-or introduce new instances of the non-join operators discussed above
