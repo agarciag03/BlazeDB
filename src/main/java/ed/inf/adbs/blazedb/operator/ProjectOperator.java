@@ -10,26 +10,21 @@ import java.util.List;
 public class ProjectOperator extends Operator {
     private Operator child;
     private List<String> columnItems;
+    private List<Expression> projectionExpressions;
 
 
-    public ProjectOperator(Operator child, List<Expression> selectItems, List<String> columns) {
+
+    public ProjectOperator(Operator child, List<Expression> projectionExpressions) {
         this.child = child;
-
-        if (columns == null) {
-            this.columnItems = new ArrayList<>();
-            for (Expression expression : selectItems) {
-                if (expression != null) {
-                    Column column = (Column) expression;
-                    this.columnItems.add(column.toString());
-                }
-            }
-        }
-
-        if (selectItems == null) {
-            this.columnItems = columns;
-        }
-
-
+        this.projectionExpressions = projectionExpressions;
+//        this.columnItems = new ArrayList<>();
+//
+//        for (Expression expression : selectItems) {
+//            if (expression != null) {
+//                Column column = (Column) expression;
+//                this.columnItems.add(column.toString());
+//            }
+//        }
     }
 
     // Early projection
@@ -43,7 +38,7 @@ public class ProjectOperator extends Operator {
 
     @Override
     public Tuple getNextTuple() throws Exception {
-        return projectTuple(child.getNextTuple(), columnItems);
+        return projectTuple(child.getNextTuple());
     }
 
     @Override
@@ -61,12 +56,25 @@ public class ProjectOperator extends Operator {
      * @param columnItems The list of column names to be projected
      * @return The projected tuple
      */
-    public Tuple projectTuple(Tuple tuple, List<String> columnItems) {
+//    public Tuple projectTuple(Tuple tuple, List<String> columnItems) {
+//        if (tuple != null) {
+//            Tuple projectedTuple = new Tuple();
+//            for (String column : columnItems) {
+//                int columnIndex = tuple.getColumnIndex(column);
+//                projectedTuple.addValue(tuple.getValue(columnIndex), column);
+//            }
+//            return projectedTuple;
+//        }
+//        return null;
+//    }
+
+    public Tuple projectTuple(Tuple tuple) {
         if (tuple != null) {
             Tuple projectedTuple = new Tuple();
-            for (String column : columnItems) {
-                int columnIndex = tuple.getColumnIndex(column);
-                projectedTuple.addValue(tuple.getValue(columnIndex), column);
+            for (Expression columnExpression : projectionExpressions) {
+                Column column = (Column) columnExpression;
+                int columnIndex = tuple.getColumnIndex(column.toString());
+                projectedTuple.addValue(tuple.getValue(columnIndex), column.toString());
             }
             return projectedTuple;
         }

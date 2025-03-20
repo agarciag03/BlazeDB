@@ -31,7 +31,10 @@ swap operators in the following order
 ### Step 1
 in the scan: 
 1. Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. 
-2. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections no done, or needed of rsubsequent task. 
+2. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections needed in the following task  
+3. 
+4. 
+5. no done, or needed of rsubsequent task. 
 In if the selection was done in the step before, we delete these columns. 
 Just keep the columns needed for the next operator and the final result.
 

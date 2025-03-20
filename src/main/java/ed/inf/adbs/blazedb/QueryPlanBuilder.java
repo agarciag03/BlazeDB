@@ -17,22 +17,22 @@ import java.util.*;
 public class QueryPlanBuilder {
 
     // Elements of the query
-    //private String fromTable;
-    private Map<String, Boolean> queryTables = new LinkedHashMap<>();
-    private Map<String, HashSet<String>> tableColumnsMentioned = new HashMap<>();
+    private Map<String, Boolean> tableNeeded = new LinkedHashMap<>();
+    private Map<Column, Boolean> columnsNeeded = new HashMap<>();
 
     private List<Expression> projectionExpressions = new ArrayList<>();
     private List<Function> sumExpressions = new ArrayList<>();
 
-    private List<Expression> joinConditions = new ArrayList<>();
+    private List<Expression> joinExpressions = new ArrayList<>();
     private HashSet<Expression> joinElements = new LinkedHashSet<>();
     private List <Join> crossProductElements = new ArrayList<>();
 
+    private List<Expression> selectionExpressions = new ArrayList<>();
     private Map<String, Expression> selectionColumns = new HashMap<>();
-    private List<Expression> selectionConditions = new ArrayList<>();
+
 
     private List<OrderByElement> orderByElements = new ArrayList<>();
-    private List<Expression> groupByElements = new ArrayList<>();
+    private List<Expression> groupByExpressions = new ArrayList<>();
     private Distinct distinctElement;
 
 
@@ -44,25 +44,21 @@ public class QueryPlanBuilder {
     private boolean orderByOperator = false;
     private boolean groupByOperator = false;
     private boolean sumOperator = false;
+
+    // Flag to identify if the query is always false
     private boolean isAlwaysFalse = false;
 
     private Operator rootOperator;
 
-    /**
-     * This method is responsible of identifying all the elements and operators of the query to build the query plan
-     *
-     * @param statement
-     * @throws Exception
-     */
     public void identifyElementsOperators(Statement statement) {
 
         // It is assumed that  all the Statements are Selects
-        Select select = (Select) statement; // Statement is always a Select
+        Select select = (Select) statement;
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
 
         // 0. Identifying the table in the FROM clause
         //String fromTable = plainSelect.getFromItem().toString();
-        queryTables.put(plainSelect.getFromItem().toString(), false);
+        tableNeeded.put(plainSelect.getFromItem().toString(), false);
 
         // 1. identifying projection (or AllColumns) and SUM Operator
         // list of SelectItem objects, where each one is either AllColumns
@@ -114,7 +110,7 @@ public class QueryPlanBuilder {
         List<Join> joinsExpressions = plainSelect.getJoins();
         if (joinsExpressions != null) {
             for (Join join : joinsExpressions) {
-                queryTables.put(join.toString(), false); // Identifying the tables in the query
+                tableNeeded.put(join.toString(), false); // Identifying the tables in the query
 
                 // identify Joins without Conditions - Join tables without conditions are cross products
                 if(!hasJoinCondition(join.toString())) {
@@ -131,12 +127,12 @@ public class QueryPlanBuilder {
 
         // Implementation #5
         if (joinsExpressions != null) { // Hay expresiones de JOIN
-            for (String tableName : queryTables.keySet()) { // Tablas en orden de izquierda a derecha
+            for (String tableName : tableNeeded.keySet()) { // Tablas en orden de izquierda a derecha
 
                 List<Expression> toRemove = new ArrayList<>();
                 List<Expression> toAdd = new ArrayList<>();
 
-                for (Expression joinCondition : joinConditions) {
+                for (Expression joinCondition : joinExpressions) {
                     BinaryExpression joinExpression = (BinaryExpression) joinCondition;
                     Column leftExpression = (Column) joinExpression.getLeftExpression();
                     Column rightExpression = (Column) joinExpression.getRightExpression();
@@ -148,7 +144,7 @@ public class QueryPlanBuilder {
                     if (leftTable.equals(tableName) || rightTable.equals(tableName)) {
 
                         // Verifica si el orden está incorrecto
-                        if (queryTables.containsKey(rightTable) && queryTables.containsKey(leftTable)
+                        if (tableNeeded.containsKey(rightTable) && tableNeeded.containsKey(leftTable)
                                 && getTableIndex(leftTable) > getTableIndex(rightTable)) {
 
                             // Corrige la expresión según el tipo de operador
@@ -181,7 +177,7 @@ public class QueryPlanBuilder {
                 }
 
                 // **Eliminar elementos después de la iteración**
-                joinConditions.removeAll(toRemove);
+                joinExpressions.removeAll(toRemove);
                 joinElements.addAll(toAdd);
             }
         }
@@ -204,17 +200,16 @@ public class QueryPlanBuilder {
 
         // 6. Identify the group by operator
         if (plainSelect.getGroupBy() != null) {
-            groupByElements = plainSelect.getGroupBy().getGroupByExpressionList();
-            System.out.println("GROUP BY: " + groupByElements);
+            groupByExpressions = plainSelect.getGroupBy().getGroupByExpressionList();
+            System.out.println("GROUP BY: " + groupByExpressions);
         }
-
 
 
     }
 
     private int getTableIndex(String tableName) {
         int index = 0;
-        for (String table : queryTables.keySet()) {
+        for (String table : tableNeeded.keySet()) {
             if (table.equals(tableName)) {
                 return index;
             }
@@ -223,6 +218,7 @@ public class QueryPlanBuilder {
         return -1; // No encontrado
     }
 
+    // this method is used to identify the columns when there is a projection operator. It is useful for early projections for optimisation
     private void identifyExpressions() {
 
         //About Orderby: You may also assume that the attributes mentioned in the ORDER BY are a subset of
@@ -230,35 +226,39 @@ public class QueryPlanBuilder {
         //S.A FROM S ORDER BY S.B is valid SQL, but we choose not to support it in this project.
 
         List<Expression> expressions = new ArrayList<>();
+
         expressions.addAll(projectionExpressions);
-        expressions.addAll(selectionConditions);
-        // check there is not elements here to identify the projections
-        expressions.addAll(joinConditions);
-        //expressions.add((Expression) joinElements);
+        expressions.addAll(selectionExpressions);
+        //expressions.addAll(joinExpressions);
+        expressions.addAll(joinElements);
         expressions.addAll(sumExpressions);
-        //expressions.addAll(orderByElements);
-        expressions.addAll(groupByElements);
+        expressions.addAll(groupByExpressions);
+
+        // Not orderby expressions are considered since in the instructions it is mentioned that the attributes mentioned in the ORDER BY are a subset of those retained by the SELECT
 
         for (Expression expression : expressions) {
 
-            if (expression instanceof Column) {
-                Column column = (Column) expression;
-                tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
 
+            if (expression instanceof Column) {
+                // Identify the column needed in each expression
+                Column column = (Column) expression;
+                 columnsNeeded.put(column, true);
             } else if (expression instanceof Function) {
+                // Identify the columns needed in the function SUM
                 Function function = (Function) expression;
                 extractColumnsFromFunction(function);
 
             } else if (expression instanceof BinaryExpression) {
+                // Identify the columns needed in the binary expression like selections and joins
                 BinaryExpression binaryExpression = (BinaryExpression) expression;
+
                 if (binaryExpression.getLeftExpression() instanceof Column) {
                     Column column = (Column) binaryExpression.getLeftExpression();
-                    tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
-
-                } else if (binaryExpression.getRightExpression() instanceof Column) {
+                    columnsNeeded.put(column, true);
+                }
+                if (binaryExpression.getRightExpression() instanceof Column) {
                     Column column = (Column) binaryExpression.getRightExpression();
-                    tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
-
+                    columnsNeeded.put(column, true);
                 }
             }
         }
@@ -279,15 +279,13 @@ public class QueryPlanBuilder {
 
             } else if (param instanceof Column) { // Sum by column
                 Column column = (Column) param;
-                tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
-
+                columnsNeeded.put(column, true);
             } else if (param instanceof BinaryExpression) { // sum multiplication
                 //return multiplicacionExpression((BinaryExpression) param, tuple); // SUM(A * B)
                 if (param instanceof Column) {
                     // Si la expresión es una columna, obtenemos su valor del tuple
                     Column column = (Column) param;
-                    tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
-
+                    columnsNeeded.put(column, true);
                 } else if (param instanceof LongValue) {
                     // Si la expresión es un valor numérico (ej. 5, 10, etc.)
                     //Do nothing
@@ -295,22 +293,6 @@ public class QueryPlanBuilder {
                     // Si es una multiplicación, descomponemos en izquierda y derecha recursivamente
                     BinaryExpression multiplication = (BinaryExpression) param;
                     getMultiplicationParameters(multiplication);
-//                    if (multiplication.getRightExpression() instanceof Column) {
-//                        Column column = (Column) multiplication.getRightExpression();
-//                        tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.getColumnName());
-//                    }
-//                    if (multiplication.getLeftExpression() instanceof Column) {
-//                        Column column = (Column) multiplication.getLeftExpression();
-//                        tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.getColumnName());
-//                    } else {
-//                        extractColumnsFromFunction(multiplication.getLeftExpression());
-//                    }
-                    //tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.getColumnName());
-
-                    //extractColumnsFromFunction(multiplication);
-                    //int leftValue = extractColumnsFromFunction(multiplication.getLeftExpression(), tuple);
-                    //int rightValue = multiplicacionExpression(multiplication.getRightExpression(), tuple);
-                    //return leftValue * rightValue;
                 }
             }
         }
@@ -321,35 +303,18 @@ public class QueryPlanBuilder {
         if (multiplication.getRightExpression() instanceof Column) {
             Column column = (Column) multiplication.getRightExpression();
             String columnNaeme = column.toString();
-            tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
+            columnsNeeded.put(column, true);
         }
         if (multiplication.getLeftExpression() instanceof Column) {
             Column column = (Column) multiplication.getLeftExpression();
-            tableColumnsMentioned.computeIfAbsent(column.getTable().getName().toString(), k -> new HashSet<>()).add(column.toString());
+            columnsNeeded.put(column, true);
         } else {
             getMultiplicationParameters(multiplication.getLeftExpression());
         }
     }
 
-
-    private Expression getJoinCondition(String tableName) {
-        for (Expression joinCondition : joinConditions) {
-
-            BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-            Column leftExpression = (Column) joinExpression.getLeftExpression();
-            Column righExpression = (Column) joinExpression.getRightExpression();
-
-            if (leftExpression.getTable().getName().equals(tableName) || righExpression.getTable().getName().equals(tableName)) {
-                //joinConditions.remove(joinCondition);
-                return joinCondition;
-
-            }
-        }
-        return null;
-    }
-
     private boolean hasJoinCondition(String tableName) {
-        for (Expression joinCondition : joinConditions) {
+        for (Expression joinCondition : joinExpressions) {
 
             BinaryExpression joinExpression = (BinaryExpression) joinCondition;
             Column leftExpression = (Column) joinExpression.getLeftExpression();
@@ -369,7 +334,7 @@ public class QueryPlanBuilder {
             // Identify Joins
             if (isJoinCondition(binaryExpression)) {
                 //this.joinConditions.add(expression);
-                this.joinConditions.add(0, expression);
+                this.joinExpressions.add(0, expression);
                 System.out.println("JOIN: " + expression);
 //            } else {
 //
@@ -391,7 +356,7 @@ public class QueryPlanBuilder {
                 Column column = (Column) binaryExpression.getLeftExpression();
                 String columnName = column.getTable().getName();
                 selectionColumns.put(columnName, expression);
-                this.selectionConditions.add(expression);
+                this.selectionExpressions.add(expression);
 
             } else if (binaryExpression.getLeftExpression() instanceof LongValue){
                 // Identify trivial selections and analyse them
@@ -405,12 +370,12 @@ public class QueryPlanBuilder {
                     isAlwaysFalse = true;
                 }
 
-
-                this.selectionConditions.add(expression);
+                // Note: If the condition  is always true the program does not consider it
+                //this.selectionExpressions.add(expression);
 
                 //OPTIMISATION: Trivial query. Here we want to avoid to avoid operation that are not needed in the query, in case of 1 = 2
 
-                System.out.println("WHERE: " + expression);
+                System.out.println("No guardé WHERE: " + expression);
             }
         }
     }
@@ -441,13 +406,13 @@ public class QueryPlanBuilder {
         if (!this.projectionExpressions.isEmpty() ) {
             this.projectionOperator = true;
         }
-        if (!this.joinConditions.isEmpty() || !this.joinElements.isEmpty()) {
+        if (!this.joinExpressions.isEmpty() || !this.joinElements.isEmpty()) {
             this.joinOperator = true;
         }
         if (!this.crossProductElements.isEmpty()) {
             this.joinOperator = true;
         }
-        if (!this.selectionConditions.isEmpty()) {
+        if (!this.selectionExpressions.isEmpty()) {
             this.selectionOperator = true;
         }
         if (!this.sumExpressions.isEmpty()) {
@@ -459,7 +424,7 @@ public class QueryPlanBuilder {
         if (this.distinctElement != null) {
             this.distinctOperator = true;
         }
-        if (!this.groupByElements.isEmpty()) {
+        if (!this.groupByExpressions.isEmpty()) {
             this.groupByOperator = true;
         }
     }
@@ -496,7 +461,7 @@ public class QueryPlanBuilder {
         //rootOperator = scanRelation(fromTable);
 
         //rootOperator = scanRelation(queryTables.get(0));
-        rootOperator = scanRelation(queryTables.keySet().iterator().next());
+        rootOperator = scanRelation(tableNeeded.keySet().iterator().next());
 
         // 4. After having all the selections applied, we can make the joins
         // Joins should do it in order based on Joins in the query. DONE
@@ -519,7 +484,7 @@ public class QueryPlanBuilder {
         // Should I use the projection by table before Joins?
         // We use projections if neither sum nor group by are present, otherwise, the projection will be done in the SumOperator
         if (projectionOperator && !sumOperator && !groupByOperator) {
-            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions, null);
+            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
             rootOperator = projectOperator;
         }
 
@@ -535,7 +500,7 @@ public class QueryPlanBuilder {
 
         // blocking Operato
         if (groupByOperator || sumOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByElements, sumExpressions, projectionExpressions);
+            Operator groupByOperator = new SumOperator(rootOperator, groupByExpressions, sumExpressions, projectionExpressions);
             rootOperator = groupByOperator;
         }
 
@@ -580,31 +545,63 @@ public class QueryPlanBuilder {
         // OPTIMISATION: if there is a selection condition for this table, apply it
         // Obviously it is most efficient to evaluate the selections as
         //early as possible
-        if (selectionColumns.containsKey(fromTable)) {
-            List<Expression> selectionsForTable = getSelectionCondition(fromTable);
 
-            for (Expression selectionCondition : selectionsForTable) {
-                Operator selectOperator = new SelectOperator(root, selectionCondition);
-                root = selectOperator;
+//        if (selectionColumns.containsKey(fromTable)) {
+//            List<Expression> selectionsForTable = getSelectionCondition(fromTable);
+//
+//            for (Expression selectionCondition : selectionsForTable) {
+//                Operator selectOperator = new SelectOperator(root, selectionCondition);
+//                root = selectOperator;
+//            }
+//        }
+
+        if (selectionOperator) {
+            for (Expression selectionCondition : selectionExpressions) {
+                BinaryExpression binaryExpression = (BinaryExpression) selectionCondition;
+                Column column = (Column) binaryExpression.getLeftExpression();
+                if (column.getTable().getName().equals(fromTable)){
+                    Operator selectOperator = new SelectOperator(root, selectionCondition);
+                    root = selectOperator;
+                }
             }
         }
 
         // OPTIMISATION: if there are projections in the select we could apply including the columns that are needed for the subsequent operators. It is a way to reduce the intermediate results
+        // Check if which columns are needed for the following operators and just keep them
 
-//        if (projectionOperator) {
-//            if (tableColumnsMentioned.containsKey(fromTable)) {
-//
-//                List<String> columns = new ArrayList<>(tableColumnsMentioned.get(fromTable));
-//                Operator projectOperator = new ProjectOperator(root, null, columns);
-//                root = projectOperator;
-//            }
-//        }
+        if (projectionOperator) {
+            List<Expression> columnsNeed = new ArrayList<>();
+            for (Column column : columnsNeeded.keySet()) {
+
+                // Identify the columns needed for the following operators for this table
+                if (column.getTable().getName().equals(fromTable) && columnsNeeded.get(column)) {
+                    columnsNeed.add(column);
+                }
+            }
+
+            columnsNeed = getUniqueColumns(columnsNeed); // this method is used to remove duplicates
+            Operator projectOperator = new ProjectOperator(root, columnsNeed); // project all columns that I need
+            root = projectOperator;
+        }
 
 
 
         // Modify the state of scan table to true
-        queryTables.put(fromTable, true);
+        tableNeeded.put(fromTable, true);
         return root;
+    }
+
+    private List<Expression> getUniqueColumns(List<Expression> columns) {
+        Set<String> seen = new HashSet<>();
+        List<Expression> uniqueColumns = new ArrayList<>();
+
+        for (Expression expr : columns) {
+            if (seen.add(expr.toString())) {
+                uniqueColumns.add(expr);
+            }
+        }
+
+        return uniqueColumns;
     }
 
     private List<Expression> getSelectionCondition(String fromTable) {
