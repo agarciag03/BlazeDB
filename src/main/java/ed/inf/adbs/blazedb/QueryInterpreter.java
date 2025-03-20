@@ -42,23 +42,7 @@ public class QueryInterpreter {
 
     }
 
-    /**
-     * Reads SQL statement from query file and parses it using the CCJSqlParserUtil.
-     * This method catches any exceptions that occur during parsing and prints an error message.
-     */
-//    private static Statement parsingSQL(String inputFile) throws Exception {
-//        try {
-//            Statement statement = CCJSqlParserUtil.parse(new FileReader(inputFile));
-//            System.out.println(inputFile + ": " + statement);
-//
-//            return statement;
-//
-//        } catch (Exception e) {
-//            System.err.println("Exception occurred during parsing");
-//            e.printStackTrace();
-//            return null;
-//        }
-//    }
+
 
     /**
      * Executes the provided query plan by repeatedly calling `getNextTuple()`

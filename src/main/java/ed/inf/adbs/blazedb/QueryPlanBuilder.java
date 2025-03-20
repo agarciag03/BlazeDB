@@ -498,15 +498,6 @@ public class QueryPlanBuilder {
         //rootOperator = scanRelation(queryTables.get(0));
         rootOperator = scanRelation(queryTables.keySet().iterator().next());
 
-// 3. Apply the selections without columns. Ex: 1=1 or 2=1
-//        if (selectionOperator) {
-//            List<Expression> selectionsWithoutTable = getSelectionCondition("-1"); // -1 means no columns
-//            for (Expression selectionCondition : selectionsWithoutTable) {
-//                Operator selectOperator = new SelectOperator(rootOperator, selectionCondition);
-//                rootOperator = selectOperator;
-//            }
-//        }
-
         // 4. After having all the selections applied, we can make the joins
         // Joins should do it in order based on Joins in the query. DONE
 //        if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
@@ -514,19 +505,6 @@ public class QueryPlanBuilder {
         if (joinOperator && !joinElements.isEmpty()) { // There is a join condition
             for (Expression joinCondition : joinElements) {
                 BinaryExpression joinExpression = (BinaryExpression) joinCondition;
-
-                // Identify the table on the root
-//                Column leftColumn = (Column) joinExpression.getLeftExpression();
-//                String leftTableName = leftColumn.getTable().toString();
-//                Column rightcolumn = (Column) joinExpression.getRightExpression();
-//                String rightTableName = rightcolumn.getTable().toString();
-//
-//                if (queryTables.get(rightTableName)) {
-//                    rootOperator = new JoinOperator(rootOperator, scanRelation(leftTableName), joinCondition);
-//                } else {
-//                    rootOperator = new JoinOperator(rootOperator, scanRelation(rightTableName), joinCondition);
-//                }
-
 
                 // Identify the table on right side to scan it
                 Column rightcolumn = (Column) joinExpression.getRightExpression();
@@ -599,17 +577,7 @@ public class QueryPlanBuilder {
         // 1. Scan Table
         Operator root = new ScanOperator(fromTable);
 
-        // OPTIMISATION: Trivial query. Here we avoid to avoid operation that are not needed in the query, in case of 1 = 2
-        if (selectionOperator) { // if there is a selection condition
-            List<Expression> selectionsWithoutTable = getSelectionCondition("-1"); // -1 means no columns
-            for (Expression selectionCondition : selectionsWithoutTable) {
-                Operator selectOperator = new SelectOperator(root, selectionCondition);
-                root = selectOperator;
-            }
-        }
-
-
-// OPTIMISATION: if there is a selection condition for this table, apply it
+        // OPTIMISATION: if there is a selection condition for this table, apply it
         // Obviously it is most efficient to evaluate the selections as
         //early as possible
         if (selectionColumns.containsKey(fromTable)) {

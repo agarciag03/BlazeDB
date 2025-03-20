@@ -25,11 +25,20 @@ The steps that I considered for the optimization rules and reducing intermediate
 transform query plans:
 swap operators in the following order
 
-0. (Before create the query plan, we can identify this kind) Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
+### step 0
+1. (Before create the query plan, we can identify this kind) Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
 
+### Step 1
+in the scan: 
 1. Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. 
-2. new instances - Projection Pushdown: Where there are projections in the query....
+2. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections no done, or needed of rsubsequent task. 
+In if the selection was done in the step before, we delete these columns. 
+Just keep the columns needed for the next operator and the final result.
+
+
 * Projections before joins can reduce intermediate results working just in the columns needed.
+* 
+* 
 * Be carefull projections should be apply at the beginning but also at the end, because there could be columns that are needed for operators like joins, groupby, orderby, etc and they should be taken away from the intermediate results at the end of the query.
  - This is to leave the result as user is expecting and reduce the intermediate results before distinct and order by operators.
 4. distinctOperator before order by to reduce the number of tuples that are passed to this operator that in fact block the whole database
