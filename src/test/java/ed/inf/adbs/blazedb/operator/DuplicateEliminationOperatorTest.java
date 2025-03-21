@@ -18,12 +18,13 @@ public class DuplicateEliminationOperatorTest {
 
     @Before
     public void setUp() {
+        String[] columnNames = {"A", "B", "C"};
         List<Tuple> tuples = Arrays.asList(
-                new Tuple("1, 2, 3"),
-                new Tuple("1, 2, 3"),
-                new Tuple("4, 5, 6"),
-                new Tuple("4, 5, 6"),
-                new Tuple("7, 8, 9")
+                new Tuple("1, 2, 3", "", columnNames),
+                new Tuple("1, 2, 3", "", columnNames),
+                new Tuple("4, 5, 6", "", columnNames),
+                new Tuple("4, 5, 6", "", columnNames),
+                new Tuple("7, 8, 9", "", columnNames)
         );
         dummyOperator = new DummyOperator(tuples);
         duplicateEliminationOperator = new DuplicateEliminationOperator(dummyOperator);

@@ -19,13 +19,13 @@ public class JoinOperatorTest {
 
     @Before
     public void setUp() {
-
-
-        Tuple tuple1 = new Tuple("1, 2");
-        Tuple tuple2 = new Tuple("3, 4");
+        String tableName = "DummyTable";
+        String[] columnNames = {"A", "B", "C"};
+        Tuple tuple1 = new Tuple("1, 2", tableName, columnNames);
+        Tuple tuple2 = new Tuple("3, 4", tableName, columnNames);
         List<Tuple> leftTuples = Arrays.asList(tuple1, tuple2);
-        Tuple tuple3 = new Tuple("5, 6");
-        Tuple tuple4 = new Tuple("7, 8");
+        Tuple tuple3 = new Tuple("5, 6", tableName, columnNames);
+        Tuple tuple4 = new Tuple("7, 8", tableName, columnNames);
         List<Tuple> rightTuples = Arrays.asList(tuple3, tuple4);
 
 

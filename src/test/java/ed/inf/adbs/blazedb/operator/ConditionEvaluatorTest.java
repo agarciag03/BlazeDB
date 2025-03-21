@@ -12,6 +12,9 @@ import static org.junit.Assert.assertTrue;
 
 public class ConditionEvaluatorTest {
 
+    String tableName = "Student";
+    String[] columnNames = {"A", "B", "C", "D"};
+
     @Before
     public void setUp() throws Exception {
         Catalog catalog = Catalog.getInstance();
@@ -23,16 +26,17 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 = 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
     @Test
     public void testSimpleEqualsTrue() throws Exception {
+
         String conditionStr = "1 = 1";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -40,7 +44,7 @@ public class ConditionEvaluatorTest {
     @Test
     public void testTrueEqualsReference() throws Exception {
 
-        Tuple tuple = new Tuple("10, 200, 50, 33", "Student", new String[]{"A", "B", "C", "D"});
+        Tuple tuple = new Tuple("10, 200, 50, 33", tableName, columnNames);
 
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 10");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
@@ -64,7 +68,7 @@ public class ConditionEvaluatorTest {
     public void testFalseEqualsReference() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.B = 2");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertFalse(evaluator.evaluate(new Tuple("1, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("1, 200, 50, 33", tableName, columnNames)));
 
     }
 
@@ -73,7 +77,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 != 2";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -82,7 +86,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 != 1";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
@@ -90,11 +94,11 @@ public class ConditionEvaluatorTest {
     public void testNotEqualsWithReference() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.B != 10");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
 
         condition = CCJSqlParserUtil.parseCondExpression("Student.A != 10");
         evaluator = new ConditionEvaluator(condition);
-        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
     }
 
     @Test
@@ -102,7 +106,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "3 > 1";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -112,7 +116,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 > 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
@@ -120,11 +124,11 @@ public class ConditionEvaluatorTest {
     public void testGreaterThanWithReference() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A > 9");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
 
         condition = CCJSqlParserUtil.parseCondExpression("Student.A > 10");
         evaluator = new ConditionEvaluator(condition);
-        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
     }
 
     @Test
@@ -132,7 +136,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "3 >= 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -141,7 +145,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 >= 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
@@ -149,11 +153,11 @@ public class ConditionEvaluatorTest {
     public void testGreaterThanOrEqualsWithReference() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.C >= 50");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
 
         condition = CCJSqlParserUtil.parseCondExpression("Student.D >= 32");
         evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
     }
 
     @Test
@@ -161,7 +165,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "1 < 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -170,7 +174,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "3 < 1";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
@@ -179,7 +183,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "3 <= 3";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertTrue(evaluator.evaluate(dummyTuple));
     }
 
@@ -188,7 +192,7 @@ public class ConditionEvaluatorTest {
         String conditionStr = "3 <= 1";
         Expression condition = CCJSqlParserUtil.parseCondExpression(conditionStr);
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        Tuple dummyTuple = new Tuple("1, 2, 3, 4");
+        Tuple dummyTuple = new Tuple("1, 2, 3, 4", tableName, columnNames);
         assertFalse(evaluator.evaluate(dummyTuple));
     }
 
@@ -196,11 +200,11 @@ public class ConditionEvaluatorTest {
     public void testGreaterThanOrEqualsReferenceWithSameReference() throws Exception {
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.C >= Student.A");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
 
         condition = CCJSqlParserUtil.parseCondExpression("Student.A >= Student.C");
         evaluator = new ConditionEvaluator(condition);
-        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33")));
+        assertFalse(evaluator.evaluate(new Tuple("10, 200, 50, 33", tableName, columnNames)));
 
     }
 
@@ -210,19 +214,19 @@ public class ConditionEvaluatorTest {
 
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
 
-
-        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33", "Student", new String[]{"A", "B", "C", "D"})));
-        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33", "Student", new String[]{"A", "B", "C", "D"})));
-        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33", "Student", new String[]{"A", "B", "C", "D"})));
+        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33", tableName, columnNames)));
+        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33", tableName, columnNames)));
+        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33", tableName, columnNames)));
     }
 
     @Test
     public void testAndCondition4Options() throws Exception {
+
         Expression condition = CCJSqlParserUtil.parseCondExpression("Student.A = 1 AND Student.B = 200 AND Student.C = 50 AND Student.D >= 33");
         ConditionEvaluator evaluator = new ConditionEvaluator(condition);
-        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33")));
-        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33")));
-        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33")));
+        assertTrue(evaluator.evaluate(new Tuple("1, 200, 50, 33", tableName, columnNames)));
+        assertFalse(evaluator.evaluate(new Tuple("1, 100, 50, 33", tableName, columnNames)));
+        assertFalse(evaluator.evaluate(new Tuple("2, 200, 50, 33", tableName, columnNames)));
     }
 
 

@@ -130,7 +130,7 @@ public class SumOperator extends Operator {
             return groupKey;
         } else {
             for (String column : groupByColumnsNames) {
-                groupKey.add((Integer) tuple.getValue(tuple.getColumnIndex(column)));
+                groupKey.add((Integer) tuple.getValue(column));
             }
         }
         return groupKey;
@@ -160,7 +160,7 @@ public class SumOperator extends Operator {
 
                 } else if (param instanceof Column) { // Sum by column
                     Column column = (Column) param;
-                    return tuple.getValue(tuple.getColumnIndex(column.toString()));
+                    return tuple.getValue(column.toString());
 
                 } else if (param instanceof BinaryExpression) { // sum multiplication
                     return multiplicacionExpression((BinaryExpression) param, tuple); // SUM(A * B)
@@ -190,7 +190,7 @@ public class SumOperator extends Operator {
         if (expr instanceof Column) {
             // Si la expresión es una columna, obtenemos su valor del tuple
             Column column = (Column) expr;
-            return tuple.getValue(tuple.getColumnIndex(column.toString()));
+            return tuple.getValue(column.toString());
         } else if (expr instanceof LongValue) {
             // Si la expresión es un valor numérico (ej. 5, 10, etc.)
             return (int) ((LongValue) expr).getValue();

@@ -65,8 +65,9 @@ public class ConditionEvaluator extends ExpressionDeParser {
     private int evaluateExpressionValue(Expression expression, Tuple tuple) {
         if (expression instanceof Column) {
             Column column = (Column) expression;
-            int columnIndex = tuple.getColumnIndex(column.toString());
-            return tuple.getValue(columnIndex);
+//            int columnIndex = tuple.getColumnIndex(column.toString());
+//            return tuple.getValue(columnIndex);
+            return tuple.getValue(column.toString());
         } else {
             // When the WHERE condition contains an integer instead of a column.
             return Integer.parseInt(expression.toString());

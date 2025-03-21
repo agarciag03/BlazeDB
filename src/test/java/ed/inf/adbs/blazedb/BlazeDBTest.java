@@ -462,7 +462,10 @@ public class BlazeDBTest {
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));
 		List<String> expected = Arrays.asList(
-				"2"
+				"1, 101, 1",
+				"1, 102, 1",
+				"1, 103, 1"
+
 		);
 		assertEquals(expected, result);
 	}

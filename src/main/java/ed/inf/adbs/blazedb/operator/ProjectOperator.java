@@ -73,8 +73,9 @@ public class ProjectOperator extends Operator {
             Tuple projectedTuple = new Tuple();
             for (Expression columnExpression : projectionExpressions) {
                 Column column = (Column) columnExpression;
-                int columnIndex = tuple.getColumnIndex(column.toString());
-                projectedTuple.addValue(tuple.getValue(columnIndex), column.toString());
+
+                //int columnIndex = tuple.getColumnIndex(column.toString());
+                projectedTuple.addValue(tuple.getValue(column.toString()), column.toString());
             }
             return projectedTuple;
         }

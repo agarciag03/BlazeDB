@@ -20,11 +20,11 @@ public class SortOperatorTest {
     @Before
     public void setUp() throws Exception {
         this.tuples = Arrays.asList(
-                new Tuple("4, 5, 6"),
-                new Tuple("1, 2, 3"),
-                new Tuple("7, 8, 9"),
-                new Tuple("1, 2, 3"),
-                new Tuple("4, 5, 6")
+                new Tuple("4, 5, 6", null, null),
+                new Tuple("1, 2, 3", null, null),
+                new Tuple("7, 8, 9", null, null),
+                new Tuple("1, 2, 3", null, null),
+                new Tuple("4, 5, 6", null, null)
 
         );
         dummyOperator = new DummyOperator(tuples);
@@ -67,8 +67,8 @@ public class SortOperatorTest {
 //                System.out.println("Sorted words (custom ordering): " + words);
 //        }
 
-    @Test
-    public void testSortTuples() throws Exception {
+    //@Test
+    //public void testSortTuples() throws Exception {
 //        List<Integer> orderByColumns = Arrays.asList(1);
 //        SortOperator sortOperator = new SortOperator(dummyOperator, orderByColumns);
 //        List<Tuple> sortedTuples = sortOperator.sortTuples(tuples);
@@ -82,6 +82,6 @@ public class SortOperatorTest {
 //        );
 //
 //        assertEquals(expectedTuples, sortedTuples);
-    }
+    //}
 
 }

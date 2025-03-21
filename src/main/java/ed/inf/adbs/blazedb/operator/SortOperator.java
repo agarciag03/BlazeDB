@@ -44,8 +44,8 @@ public class SortOperator extends Operator{
             @Override
             public int compare(Tuple tuple1, Tuple tuple2) {
                 for (String column : orderByColumns) {
-                    int columnIndex = tuple1.getColumnIndex(column);
-                    int comparison = tuple1.getValue(columnIndex).compareTo(tuple2.getValue(columnIndex));
+                    //int columnIndex = tuple1.getColumnIndex(column);
+                    int comparison = tuple1.getValue(column).compareTo(tuple2.getValue(column));
 
                     if (comparison != 0) { // Si hay diferencia, devolvemos el resultado
                         return comparison;
