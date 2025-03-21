@@ -58,60 +58,46 @@ public class QueryPlanBuilder {
     // optimisation rules are applied to build the query plan in the most efficient way
     public Operator buildQueryPlan(Statement statement) throws Exception {
 
-        // 1. Identify the elements of the query that are needed to build the query plan.
+        // A. Identify the elements of the query that are needed to build the query plan.
         identifyElementsOperators(statement);
 
-        // 2. OPTIMISATION: If a trivial query was found (1=2) the program avoids building a query plan
+        // B. OPTIMISATION: If a trivial query was found (1=2) the program avoids building a query plan
         // that is not needed because the result is empty anyway.
         if (isAlwaysFalse) {
             return null;
         }
 
-        // 3. Identify the operators that are needed to build the query plan
+        // C. Identify the operators that are needed to build the query plan
         identifyOperators();
 
-        // 4. Build the query plan based on the operators identified.
+        // D. Build the query plan based on the operators identified.
         // Here, RootOperator is the variable that contains the whole tree. To start with, the root operator is reset to null
         rootOperator = null;
 
-        // A. The program starts scanning the first table that is in FROM clause.
+        // 1. The program starts scanning the first table that is in FROM clause.
         // OPTIMISATION: In the following method, the program applies also early selections and projections in the table if they are present
         rootOperator = scanWithEarlyOptimisations(neededTables.iterator().next());
 
-
-
-
-
-
-
-
-
-        // 4. After having all the selections applied, we can make the joins
-        // Joins should do it in order based on Joins in the query. DONE
-//        if (joinOperator && !joinConditions.isEmpty()) { // There is a join condition
-//            for (Expression joinCondition : joinConditions) {
-        if (joinOperator && !joinExpressions.isEmpty()) { // There is a join condition
+        // 2. After scanning and applying early optimisations in the first table, the program will apply join conditions.
+        // Having joinExpressions means that there are join conditions in the query
+        if (joinOperator && !joinExpressions.isEmpty()) {
             for (Expression joinCondition : joinExpressions) {
                 BinaryExpression joinExpression = (BinaryExpression) joinCondition;
 
-                // Identify the table on right side to scan it
+                // Identify the table on right side to scanWithEarlyOptimisations
                 Column rightcolumn = (Column) joinExpression.getRightExpression();
                 rootOperator = new JoinOperator(rootOperator, scanWithEarlyOptimisations(rightcolumn.getTable().toString()), joinCondition);
             }
         }
 
-
-        // Last step: Projections - Be carefull projection, that affect joins, selection conditions afterwards
-        // if there is sum or group by , they will send the result to the projection
-
-        // Should I use the projection by table before Joins?
-        // We use projections if neither sum nor group by are present, otherwise, the projection will be done in the SumOperator
+        // 3. Apply the rest of projections if they are present and also if there are no sum or group by operators
+        // If  there are Sum or Groupby operator the projection will be done there.
         if (projectionOperator && !sumOperator && !groupByOperator) {
-            Operator projectOperator = new ProjectOperator(rootOperator, projectionExpressions);
-            rootOperator = projectOperator;
+            rootOperator = new ProjectOperator(rootOperator, projectionExpressions);
         }
 
-        // Cross products without conditions
+        // 4. After applying all the projections, the program will do the cross products if they are present
+        // OPTIMISATION: The cross products are done just with the columns needed to reduce the intermediate results
         if (joinOperator && !crossProductExpressions.isEmpty()) {
             for (Join join : crossProductExpressions) {
                 // Identify the table on right side to scan it
@@ -121,27 +107,23 @@ public class QueryPlanBuilder {
             }
         }
 
-        // blocking Operato
+        // 5. Since Groupby and Sum are blocking operators, they are applied almost at the end of the query plan
         if (groupByOperator || sumOperator) {
-            Operator groupByOperator = new SumOperator(rootOperator, groupByExpressions, sumExpressions, projectionExpressions);
-            rootOperator = groupByOperator;
+            rootOperator = new SumOperator(rootOperator, groupByExpressions, sumExpressions, projectionExpressions);
         }
 
 
-        // Be carefull, keep distinct at the end of the operators
+        // 6. Apply the distinct operator if it is present.
+        // OPTIMISATION: This operator is applied before OrderBy to reduce the intermediate results that have to be in memory.
         if (distinctOperator) {
-            Operator distinctOperator = new DuplicateEliminationOperator(rootOperator);
-            rootOperator = distinctOperator;
+            rootOperator = new DuplicateEliminationOperator(rootOperator);
         }
 
-
-        // we can assume that order operator can be after projection.- It is good to delay sorting as late as possible, in
-        //particular to do it after the projection(s), because there will be less data to sort that way.
+        // 7. Apply the order by operator if it is present, as the last operator in the query plan
+        // when all the selections, projections, distinct are applied to reduce the tuples that have to be in memory for sorting.
         if (orderByOperator) {
-            Operator orderByOperator = new SortOperator(rootOperator, orderByExpressions);
-            rootOperator = orderByOperator;
+            rootOperator = new SortOperator(rootOperator, orderByExpressions);
         }
-
         return rootOperator;
     }
 
@@ -425,30 +407,30 @@ public class QueryPlanBuilder {
      */
     private void identifyOperators() {
 
-        if (!this.projectionExpressions.isEmpty() ) {
-            this.projectionOperator = true;
+        if (!projectionExpressions.isEmpty() ) {
+            projectionOperator = true;
             identifyColumnsForEarlyProjections(); // OPTIMISATION: Identify all the expressions needed in the query to do early projections in the scan operator
         }
-        if (!this.joinElements.isEmpty() || !this.joinExpressions.isEmpty()) {
-            this.joinOperator = true;
+        if (!joinExpressions.isEmpty()) {
+            joinOperator = true;
         }
-        if (!this.crossProductExpressions.isEmpty()) {
-            this.joinOperator = true;
+        if (!crossProductExpressions.isEmpty()) {
+            joinOperator = true;
         }
-        if (!this.selectionExpressions.isEmpty()) {
-            this.selectionOperator = true;
+        if (!selectionExpressions.isEmpty()) {
+            selectionOperator = true;
         }
-        if (!this.sumExpressions.isEmpty()) {
-            this.sumOperator = true;
+        if (!sumExpressions.isEmpty()) {
+            sumOperator = true;
         }
-        if (!this.orderByExpressions.isEmpty()) {
-            this.orderByOperator = true;
+        if (!orderByExpressions.isEmpty()) {
+            orderByOperator = true;
         }
-        if (this.distinctExpression != null) {
-            this.distinctOperator = true;
+        if (distinctExpression != null) {
+            distinctOperator = true;
         }
-        if (!this.groupByExpressions.isEmpty()) {
-            this.groupByOperator = true;
+        if (!groupByExpressions.isEmpty()) {
+            groupByOperator = true;
         }
     }
 
