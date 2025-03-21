@@ -54,8 +54,11 @@ public class QueryPlanBuilder {
     // The root operator of the query plan
     private Operator rootOperator;
 
-    // Method to build the query plan for the query that is given as input
-    // optimisation rules are applied to build the query plan in the most efficient way
+    /**
+     * This method is used to build the query plan for the query that is given as input.
+     * The query plan is built in a way that the query can be optimised and executed in the most efficient way.
+     * @param statement The parsed SQL statement, ready for further processing.
+     */
     public Operator buildQueryPlan(Statement statement) throws Exception {
 
         // A. Identify the elements of the query that are needed to build the query plan.
@@ -175,7 +178,7 @@ public class QueryPlanBuilder {
         // 6. Identify the distinct operator
         distinctExpression = plainSelect.getDistinct();
         if (distinctExpression != null) {
-            System.out.println("DISTINCT: " + distinctExpression);
+            System.out.println("DISTINCT ");
         }
 
         // 7. Identify the group by operator
