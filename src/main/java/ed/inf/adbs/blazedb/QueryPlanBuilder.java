@@ -74,9 +74,9 @@ public class QueryPlanBuilder {
         // Here, RootOperator is the variable that contains the whole tree. To start with, the root operator is reset to null
         rootOperator = null;
 
-        // A. the program starts scanning the first table that is in FROM clause.
-        // OPTIMISATION: In the following method scanRelation, the program applies also early selections and projections if they are present
-        rootOperator = scanRelation(neededTables.iterator().next());
+        // A. The program starts scanning the first table that is in FROM clause.
+        // OPTIMISATION: In the following method, the program applies also early selections and projections in the table if they are present
+        rootOperator = scanWithEarlyOptimisations(neededTables.iterator().next());
 
 
 
@@ -96,7 +96,7 @@ public class QueryPlanBuilder {
 
                 // Identify the table on right side to scan it
                 Column rightcolumn = (Column) joinExpression.getRightExpression();
-                rootOperator = new JoinOperator(rootOperator, scanRelation(rightcolumn.getTable().toString()), joinCondition);
+                rootOperator = new JoinOperator(rootOperator, scanWithEarlyOptimisations(rightcolumn.getTable().toString()), joinCondition);
             }
         }
 
@@ -116,7 +116,7 @@ public class QueryPlanBuilder {
             for (Join join : crossProductExpressions) {
                 // Identify the table on right side to scan it
                 String rightTableName = join.toString();
-                Operator scanRightTable = scanRelation(rightTableName);
+                Operator scanRightTable = scanWithEarlyOptimisations(rightTableName);
                 rootOperator = new JoinOperator(rootOperator, scanRightTable, null);
             }
         }
@@ -402,6 +402,23 @@ public class QueryPlanBuilder {
     }
 
     /**
+     * This method is used to get the index of a table in the list of tables that are needed in the query.
+     * The index is used to sort the join conditions in the order of the tables in the query.
+     * @param tableName The table to get the index
+     * @return The index of the table in the list of tables that are needed in the query
+     */
+    private int getTableIndex(String tableName) {
+        int index = 0;
+        for (String table : neededTables) {
+            if (table.equals(tableName)) {
+                return index;
+            }
+            index++;
+        }
+        return -1; // if the table is not found
+    }
+
+    /**
      * This method is used to identify the operators that are needed to build the query plan.
      * The operators are identified based on the elements of the query that were identified before.
      * The results of this method are stored in the attributes of the class (Operators of the query). They will be flags for each operator.
@@ -410,7 +427,7 @@ public class QueryPlanBuilder {
 
         if (!this.projectionExpressions.isEmpty() ) {
             this.projectionOperator = true;
-            identifyExpressions(); // OPTIMISATION: This step will allow to do early projections
+            identifyColumnsForEarlyProjections(); // OPTIMISATION: Identify all the expressions needed in the query to do early projections in the scan operator
         }
         if (!this.joinElements.isEmpty() || !this.joinExpressions.isEmpty()) {
             this.joinOperator = true;
@@ -435,36 +452,22 @@ public class QueryPlanBuilder {
         }
     }
 
+    /**
+     * This method is used to identify the columns that are needed in the query to do early projections in the scan operator for optimisation.
+     * The columns are identified based on the expressions that are needed in the query.
+     * The results of the columns needed are stored in the attribute neededColumns.
+     */
+    private void identifyColumnsForEarlyProjections() {
 
-
-
-
-
-
-
-    private int getTableIndex(String tableName) {
-        int index = 0;
-        for (String table : neededTables) {
-            if (table.equals(tableName)) {
-                return index;
-            }
-            index++;
-        }
-        return -1; // No encontrado
-    }
-
-    // this method is used to identify the columns when there is a projection operator. It is useful for early projections for optimisation
-    private void identifyExpressions() {
-
+        // All the expressions that are needed in the query
         List<Expression> expressions = new ArrayList<>();
-
         expressions.addAll(projectionExpressions);
         expressions.addAll(selectionExpressions);
         expressions.addAll(joinExpressions);
         expressions.addAll(sumExpressions);
         expressions.addAll(groupByExpressions);
 
-        // Not orderby expressions are considered since in the instructions it is mentioned that the attributes mentioned in
+        // Note: Not orderby expressions are considered since in the instructions it is mentioned that the attributes mentioned in
         // the ORDER BY are a subset of those retained by the SELECT
 
         for (Expression expression : expressions) {
@@ -472,10 +475,10 @@ public class QueryPlanBuilder {
             if (expression instanceof Column) {
                 // Identify the column needed in each expression
                 Column column = (Column) expression;
-                 neededColumns.put(column, true);
+                neededColumns.put(column, true);
 
             } else if (expression instanceof Function) {
-                // Identify the columns needed in the function SUM
+                // Identify the columns needed in the function SUM.
                 Function function = (Function) expression;
                 extractColumnsFromFunction(function);
 
@@ -495,24 +498,35 @@ public class QueryPlanBuilder {
         }
     }
 
-    // Method to extract the columns needed in the function SUM
+    /**
+     * This method is used to extract the columns that are needed in the function SUM for the early projections in the scan operator for optimisation.
+     * The columns are identified based on the function SUM that is needed in the query.
+     * The results of the columns needed are stored in the attribute neededColumns.
+     * @param function The function SUM that is needed in the query
+     */
     private void extractColumnsFromFunction(Expression function) {
         ExpressionList parameters = ((Function) function).getParameters();
         Expression expression = (Expression) parameters.getExpressions().get(0);
 
-        // If the parameter is a column or part of a multiplication expression we need to extract the columns for the Optimisation: early projection
+        // If the parameter is a column or part of a multiplication expression we need to extract the columns
         if (expression instanceof Column) {
             Column column = (Column) expression;
             neededColumns.put(column, true);
 
-        } else if (expression instanceof Multiplication) { // multiplication
+        } else if (expression instanceof Multiplication) {
             BinaryExpression multiplication = (BinaryExpression) expression;
-            getMultiplicationParameters(multiplication);
+            extractMultiplicationColumns(multiplication);
         }
     }
 
-    // to extract the columns needed in the multiplication expression in a recursive way
-    private void getMultiplicationParameters (Expression expression) {
+    /**
+     * This method is used to extract the columns that are needed in the multiplication expression for the early projections in the scan operator for optimisation.
+     * This method is built since the way to extract columns in multiplication require using the method recursively when there are expressions like SUM (A*A*B)
+     * The columns are identified based on the multiplication expression that is needed in the query.
+     * The results of the columns needed are stored in the attribute neededColumns.
+     * @param expression The multiplication expression that is needed in the query
+     */
+    private void extractMultiplicationColumns(Expression expression) {
         BinaryExpression multiplication = (BinaryExpression) expression;
         if (multiplication.getRightExpression() instanceof Column) {
             Column column = (Column) multiplication.getRightExpression();
@@ -521,21 +535,25 @@ public class QueryPlanBuilder {
         if (multiplication.getLeftExpression() instanceof Column) {
             Column column = (Column) multiplication.getLeftExpression();
             neededColumns.put(column, true);
-        } else { // recursive call
-            getMultiplicationParameters(multiplication.getLeftExpression());
+        } else {
+            // recursive call
+            extractMultiplicationColumns(multiplication.getLeftExpression());
         }
     }
 
-    // non-optional scan operator
-    private Operator scanRelation(String fromTable) throws Exception {
+    /**
+     * This method is used to scan the table and apply early optimisations like selections and projections in the table.
+     * The result of this method is stored in the attribute rootOperator.
+     * @param fromTable The table to be scanned
+     * @return The root operator of the query plan that is built (It can include scan, selection and projection operators)
+     * @throws Exception
+     */
+    private Operator scanWithEarlyOptimisations(String fromTable) throws Exception {
 
-        // 1. Scan Table
+        // 1. Scan the table
         Operator root = new ScanOperator(fromTable);
 
-        // OPTIMISATION: if there is a selection condition for this table, apply it
-        // Obviously it is most efficient to evaluate the selections as
-        //early as possible
-
+        // 2. OPTIMISATION: if there is a selection condition for this table, the program will apply it
         if (selectionOperator) {
             for (Expression selectionCondition : selectionExpressions) {
                 BinaryExpression binaryExpression = (BinaryExpression) selectionCondition;
@@ -543,14 +561,17 @@ public class QueryPlanBuilder {
                 if (column.getTable().getName().equals(fromTable)){
                     Operator selectOperator = new SelectOperator(root, selectionCondition);
                     root = selectOperator;
+
+                    // After applying the selection, the program will mark this column as not needed in the list of needed columns
+                    // It will allow to do early projections in more efficient way, reducing the intermediate results
                     markNoNeededColumn(column);
                 }
             }
         }
 
-        // OPTIMISATION: if there are projections in the select we could apply including the columns that are needed for the subsequent operators. It is a way to reduce the intermediate results
-        // Check if which columns are needed for the following operators and just keep them
-
+        // 3. OPTIMISATION: if there are projections in this table, the program will find the columns that are needed in the projection
+        // and also the columns needed for the following operators in order to do early projections and reduce intermediate results.
+        // If there is not projection, the program will not apply it since all columns are needed
         if (projectionOperator) {
             List<Expression> columnProjection = new ArrayList<>();
             for (Column column : neededColumns.keySet()) {
@@ -561,15 +582,37 @@ public class QueryPlanBuilder {
                 }
             }
 
-            columnProjection = getUniqueColumns(columnProjection); // this method is used to remove duplicates
-            Operator projectOperator = new ProjectOperator(root, columnProjection); // project all columns that I need
+            // Since in the NeedColumns can be the same column more than once, the program will remove duplicates
+            columnProjection = getUniqueColumns(columnProjection);
+            // Project only the columns needed
+            Operator projectOperator = new ProjectOperator(root, columnProjection);
             root = projectOperator;
         }
 
         return root;
     }
 
-    // Method to get the unique columns for a list. It is important because the query could have the same column in different expressions
+    /**
+     * This method is used to mark the columns that are not needed after one operator is applied.
+     * It is built as a for loop with break because the column can be more than once in the list, so the program just marks as not needed the first time it finds it with the value true.
+     * The columns are marked as not needed in the attribute neededColumns.
+     * @param targetColumn The column to be marked as not needed
+     */
+    public void markNoNeededColumn(Column targetColumn) {
+        for (Map.Entry<Column, Boolean> entry : neededColumns.entrySet()) {
+            if (entry.getKey().equals(targetColumn) && entry.getValue()) {
+                entry.setValue(false);
+                break;
+            }
+        }
+    }
+
+    /**
+     * This method is used to get the unique columns for a list. It is important because the query could have the same column in different expressions.
+     * The columns are stored in a list and the duplicates are removed.
+     * @param columns The list of columns to be checked
+     * @return The list of unique columns
+     */
     private List<Expression> getUniqueColumns(List<Expression> columns) {
         Set<String> seen = new HashSet<>();
         List<Expression> uniqueColumns = new ArrayList<>();
@@ -582,17 +625,5 @@ public class QueryPlanBuilder {
 
         return uniqueColumns;
     }
-
-    // Method to mark the columns that are not needed after one operator is applied
-    public void markNoNeededColumn(Column targetColumn) {
-        for (Map.Entry<Column, Boolean> entry : neededColumns.entrySet()) {
-            if (entry.getKey().equals(targetColumn) && entry.getValue()) {
-                entry.setValue(false);
-                break;
-            }
-        }
-    }
-
-
 
 }
