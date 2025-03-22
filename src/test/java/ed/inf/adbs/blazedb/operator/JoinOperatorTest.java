@@ -20,7 +20,7 @@ public class JoinOperatorTest {
     @Before
     public void setUp() {
         String tableName = "DummyTable";
-        String[] columnNames = {"A", "B", "C"};
+        String[] columnNames = {"A", "B"};
         Tuple tuple1 = new Tuple("1, 2", tableName, columnNames);
         Tuple tuple2 = new Tuple("3, 4", tableName, columnNames);
         List<Tuple> leftTuples = Arrays.asList(tuple1, tuple2);

@@ -24,8 +24,6 @@ public class BlazeDBTest {
 		Files.deleteIfExists(outputFile);
 	}
 
-	// Test end-to-end execution of BlazeDB using the provided sample input and expected output files
-
 	@Test
 	public void query1Test_SelectAllColumns() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input/query1.sql", "samples/output/output.csv"});
@@ -77,7 +75,6 @@ public class BlazeDBTest {
 		Collections.sort(result);
 		Collections.sort(expected);
 
-		// Comparar las listas ordenadas
 		assertEquals(expected, result);
 	}
 
@@ -154,9 +151,6 @@ public class BlazeDBTest {
 		assertEquals(expected, result);
 	}
 
-	// Add all cases that the CW requires
-
-	// New case: Projections and selection at the same time
 	@Test
 	public void query13Test_Selection() throws Exception {
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query13.sql", "samples/output/output.csv"});
@@ -182,7 +176,6 @@ public class BlazeDBTest {
 
 	@Test
 	public void query15Test_CrossProduct() throws Exception {
-		System.out.println("Cross product - between 3 tables: ");
 		BlazeDB.main(new String[] {"samples/db", "samples/input2/query15.sql", "samples/output/output.csv"});
 
 		List<String> result = Files.readAllLines(Paths.get("samples/output/output.csv"));

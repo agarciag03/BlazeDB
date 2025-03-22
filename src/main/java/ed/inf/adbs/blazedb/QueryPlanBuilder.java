@@ -172,19 +172,19 @@ public class QueryPlanBuilder {
         List <OrderByElement> orderbyExpressions =  plainSelect.getOrderByElements();
         if (orderbyExpressions != null) {
             orderByExpressions = orderbyExpressions;
-            System.out.println("ORDER BY: " + orderbyExpressions);
+            //System.out.println("ORDER BY: " + orderbyExpressions);
         }
 
         // 6. Identify the distinct operator
         distinctExpression = plainSelect.getDistinct();
         if (distinctExpression != null) {
-            System.out.println("DISTINCT ");
+            //System.out.println("DISTINCT ");
         }
 
         // 7. Identify the group by operator
         if (plainSelect.getGroupBy() != null) {
             groupByExpressions = plainSelect.getGroupBy().getGroupByExpressionList();
-            System.out.println("GROUP BY: " + groupByExpressions);
+            //System.out.println("GROUP BY: " + groupByExpressions);
         }
     }
 
@@ -201,19 +201,19 @@ public class QueryPlanBuilder {
 
             if (selectItem.getExpression() instanceof AllColumns) {
                 // Identifying AllColumns - No projections needed
-                System.out.println("SELECT: AllColumns");
+                //System.out.println("SELECT: AllColumns");
 
             } else if (selectItem.getExpression() instanceof Column) {
                 // Identifying the columns needed for the projection
                 projectionExpressions.add(selectItem.getExpression());
-                System.out.println("SELECT:  " + selectItem.getExpression());
+                //System.out.println("SELECT:  " + selectItem.getExpression());
 
             } else if (selectItem.getExpression() instanceof Function) {
                 // Identifying the SUM operations. SUM is always instance as a Function
                 Function function = (Function) selectItem.getExpression();
                 if (function.getName().equalsIgnoreCase("SUM")) {
                     sumExpressions.add(function);
-                    System.out.println("SUM:  " + function.getParameters());
+                    //System.out.println("SUM:  " + function.getParameters());
                 }
             } else { // Other functions are not allowed
                 System.out.println(" This select function is not allowed: " + selectItem);
@@ -236,12 +236,12 @@ public class QueryPlanBuilder {
             // Identifying Joins checking whether the tables involved in the condition are different
             if (isJoinCondition(binaryExpression)) {
                 joinElements.add(0, expression);
-                System.out.println("JOIN: " + expression);
+                //System.out.println("JOIN: " + expression);
 
             } else if(binaryExpression.getLeftExpression() instanceof Column) {
                 // If it is not a join condition, but it is a columns is a selection condition
                 selectionExpressions.add(expression);
-                System.out.println("WHERE: " + expression);
+                //System.out.println("WHERE: " + expression);
 
             } else if (binaryExpression.getLeftExpression() instanceof LongValue){
                 // Identifying trivial selections and analyse them immediately (OPTIMISATION)
@@ -249,7 +249,7 @@ public class QueryPlanBuilder {
                 Integer rightValue = (int) ((LongValue) binaryExpression.getRightExpression()).getValue();
 
                 if (!leftValue.equals(rightValue)) {
-                    System.out.println("TRIVIAL QUERY: " + expression);
+                    //System.out.println("TRIVIAL QUERY: " + expression);
                     isAlwaysFalse = true;
                 }
                 // OPTIMISATION: Trivial query.
@@ -301,7 +301,7 @@ public class QueryPlanBuilder {
             if(!hasJoinCondition(join.toString())) {
                 // identify cross products - Joins without Conditions
                 crossProductExpressions.add(join);
-                System.out.println("JOIN - CROSS PRODUCT: " + join);
+                //System.out.println("JOIN - CROSS PRODUCT: " + join);
             }
         }
 

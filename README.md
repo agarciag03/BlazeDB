@@ -2,56 +2,53 @@
 
 For extracting join conditions from  the WHERE condition I considered the following steps:
 
-
-strategy for extracting join conditions from the WHERE clause and evaluating
-them as part of the join.
-
-in a method 
-1. Extract the conditions from the WHERE clause.
-here we identify 3 types of conditions:
+1. In the class QueryPlanBuilder, there is a method called identifyElementsOperator. In this method, I identify the elements of the query mentioning steps. In the step 3, I identify the conditions in the WHERE clause. Since the WHERE Clause can have many expression concatenated by AND, I use a while to extract each WHERE expression and identify each of them.
+2. In the same class, in the method identifyWhereExpression, I identify each condition of WHERE clause as a join, selection or trivial expression. Each condition is defined as:
 * Joins: when there are two different table in the condition. For instance: Student.A = Enrolled.A
-* Selections: Here we can find conditions that involves just one table, in this case it could be one columns or two columns in the same table. For instance: Student.A = 1 or Student.A = Student.C. We 
-* Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
+* Selections: when the condition involves just one table, in this case it could be one column or two columns in the same table. For instance: Student.A = 1 or Student.A = Student.C.
+* Trivial expressions, when there values like 1= 1 or 2= 3 that end up being always true or false.
 
-3. Identify the join order through the joins in the parsing.
-3. Organise the joins in order to just to left to right joins based on the order of the tables in the FROM clause.
-4. Check if the join is in a correct way in terms of order of the join, to apply the left tree, keeping the scanned tables on the left side and scanning the new tables on the right side, so swapping them if it is needed. For example: From S, R Where R.A = S.A, here I swap the join transform it into S.A = R.A. 
-5. Identify the join conditions  because comparisons like = or != are not affected when swapping the tables, but comparisons like >, <, >=, <=, are affected, so I need to swap the comparison operators as well.
+In particular, I identify the join conditions using the method isJoinCondition where I identify the expression on the left and right side of the WHERE condition. Then, if the left and right column of the WHERE condition are from different tables, it is classified and saved as a join condition.
+
+3. Then, I identify join tables to extracting them from the FROM clause. It is in the same method identifyElementsOperator, as step 4. 
+In this step, I identify the tables and I check if these tables have join conditions associated.
+In order to validate if the tables have join conditions, I use the method extractJoinConditions where I check if any of the join conditions extracted in the last steps involves this table is. 
+If there is not condition for this join table, this table is saved as a cross product.
+
+4. Finally, when I have all the join conditions, I sort them in the method sortJoinConditions. Here, I verify whether the join conditions are in the correct order, because my program will apply the left tree, keeping the scanned tables on the left side and scanning the new tables on the right side. 
+If the join does not follow this order, I swap the join condition. I also take into account that some comparisons like = or != are not affected when swapping the tables, but comparisons like >, <, >=, <=, are affected, so I need to modify the comparison operators as well.
+   For example: From S, R Where R.A = S.A, here I swap the join transform it into S.A = R.A.
 
 
 # Task 2: Optimisation rules/ Why they are correct / how they reduce the size of intermediate results during query evaluation.
-
-The steps that I considered for the optimization rules and reducing intermediate results are:
-transform query plans:
-swap operators in the following order
-
-### Strategy 1
-1. (Before create the query plan, we can identify this kind) Trivial expressions like 1= 1 or 2= 3 that end up being true or false, so it is not necessary to consider them in the query plan, instead if it is always true, we omit it here, otherwise we know that it ends up in a empty result, so we can return an empty result without processing the query.
-
-### Strategy 2
-in the scan: 
-1. All Selections pushdown: Where there are selections, BlazeDB will apply selections just after scanning the table. This will reduce the number of tuples that are passed to the next operator, guaranteeing that just tuples needed will be processed by the next  operator. After selection is done, the program will mark the column used this selection as noNeeded for early projection.
-3. When there are projections in the query, then a new instances - Projection Pushdown: Taking into account just projections needed in the following task   
-In if the selection was done in the step before, we delete these columns. 
-Just keep the columns needed for the next operator and the final result.
-
-### Strategy 3 - Joins
-* Projections before joins can reduce intermediate results working just in the columns needed. Therefore, the joins with conditions are done just with the columns needed for the join and following operator
-* After joins with conditions are done, the program will apply all the projections for crossproduct. It is done with the intention to minimise the crossproduct result. It is allowed if neither sum or group by operator is active. 
-
-### Strategy 5 - Distinct before order by
-* This strategy intends to reduce the number of tuples that should be sorted in the orderBy operator. Keeping just the tuples that finally are required for the user.
-
 Note: all the strategies mentioned here are in the code with a comment starting like: OPTIMISATION.
 
+The steps that I considered for the optimization rules and reducing intermediate results are:
 
-READ
-* All projections
-* Be carefull projections should be apply at the beginning but also at the end, because there could be columns that are needed for operators like joins, groupby, orderby, etc and they should be taken away from the intermediate results at the end of the query.
- - This is to leave the result as user is expecting and reduce the intermediate results before distinct and order by operators.
-4. distinctOperator before order by to reduce the number of tuples that are passed to this operator that in fact block the whole database
-5. new instances or projections to give the result that user is expecting
-6. sort is a blocking operator, which
-   means it really needs to see all of its input before producing any output  - Order by is the last operator to apply and it is only apply where it is required in order to avoid unnecessary sorting of the tuples. We can leave the sorting at the end since the instructions "You may also assume that the attributes mentioned in the ORDER BY are a subset of
-   those retained by the SELECT. This allows you to do the sorting last, after projection." Otherwise we should check if a new projection would be needed to release the results that the user is expecting. It is good to delay sorting as late as possible, in
-   particular to do it after the projection(s), because there will be less data to sort that way.
+### Strategy 1: Trivial Expressions
+1.	Before creating the query plan, I identify trivial expressions such as 1 = 1 or 2 = 3, which are always true or false. These expressions do not need to be considered in the query plan. If an expression is always true, I omit it from the plan. 
+This strategy is correct as optimisation rules because If I find an always false expression, I can return an empty result immediately without even processing the query.
+
+### Strategy 2: Selections and Projections
+1. Selection Pushdown: When there are selections in the query, BlazeDB applies them immediately after scanning the table. This reduces the number of tuples passed to the next operator, ensuring that only the necessary tuples are processed by subsequent operators.
+This strategy is applied in the method scanWithEarlyOptimisations and is called at the beginning of the query plan when the scan operator is created, as well as when a new scan operator is created after a join operator.
+
+2. Projection Pushdown: When projections are included in the query, the program executes a method called identifyColumnsForEarlyProjections, which identifies the columns needed for all operators in the query and saves them in a list called NeededColumns.
+After the selection pushdown is applied, the program marks the columns used in the selection as “noNeeded” for early projection. Then, the program applies the projection, keeping only the columns necessary for the next operators and the final result.
+
+These steps are correct as optimization rules because selection pushdown reduces the number of tuples, and projection pushdown reduces the number of columns. Therefore, after applying these optimizations, the intermediate results are smaller, keeping only the necessary information for the subsequent operators.
+
+### Strategy 3: Joins
+1. Joins conditions are always executed after applying early projections and selections reduces the intermediate results by working with only the required tuples for this operator. 
+
+2. After performing joins with conditions, the program applies all the possible projections and then execute the cross product. This step is aimed at minimizing the size of the cross product result. 
+
+
+### Strategy 4 - Distinct before sorting
+1. If the DISTINCT operator is needed in the query, the program applies it before the ORDER BY operator. This strategy reduces the number of tuples that need to be sorted by ORDER BY, keeping only the distinct tuples required for the final result.
+Since ORDER BY is a blocking operator, having fewer tuples to process reduces memory usage, making sorting more efficient.  
+
+
+# Note for the reviewer
+* New queries were created for testing all the operators that the program can handle. These queries are in a new folder called input2.
+* I also created new tables in the schema.txt and data files for testing purpose.
