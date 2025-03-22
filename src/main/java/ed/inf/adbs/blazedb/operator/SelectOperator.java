@@ -4,7 +4,8 @@ import ed.inf.adbs.blazedb.Tuple;
 import net.sf.jsqlparser.expression.Expression;
 
 /**
- * Operator to select the tuples based on the given condition.
+ * This class is responsible for selecting tuples from the result of a query based on a specified condition.
+ * The getNextTuple method is used to get the next tuple from the child operator and evaluate the condition.
  */
 public class SelectOperator extends Operator {
 
