@@ -46,51 +46,11 @@ public class SumOperator extends Operator {
         this.projectionColumns = getColumns(projectionElements);
     }
 
-    @Override
-    public Tuple getNextTuple() throws Exception {
-
-        // blocking operator
-        if (outputIterator == null) {
-            this.groupedTuples = new HashMap<>();
-            this.aggregateResults = new HashMap<>();
-            processGroupByAndSum();
-            this.outputIterator = aggregateResults.keySet().iterator();
-        }
-
-        if (outputIterator.hasNext()) {
-            List<Integer> groupKey = outputIterator.next();
-            List<Integer> sums = aggregateResults.get(groupKey);
-            Tuple tuple = new Tuple();
-
-            // The SUM functions, if present, can reference any columns, including non-group-by columns. so we could have either group-by columns or sum columns or both
-            // therefore, here, the result returned will depend on the presence of group-by columns and sum columns
-
-            // return tuples depending on GroupBy and Sum
-            // The SELECT list can only list group-by columns but not necessarily all of them, so here we check if the projectionColumns are empty, if no, there are some columns to project
-            // some group-by columns can be omitted from the output
-            if (!groupByColumnsNames.isEmpty() && !projectionColumns.isEmpty()) {
-                List<Integer> filteredGroupKey = filterGroupKey(groupKey, groupByColumnsNames, projectionColumns);
-                tuple.addValues(filteredGroupKey, projectionColumns);
-                //tuple.addValues(groupKey, groupByColumnsNames);
-
-            }
-
-
-            if (!sumExpressions.isEmpty()) {
-                tuple.addValues(sums, getSumExpressions(this.sumExpressions));
-            }
-            tuple.printTupleWithColumns();
-            return tuple;
-        }
-        return null;
-    }
-
-    @Override
-    public void reset() throws Exception{
-        child.reset();
-        this.outputIterator = aggregateResults.keySet().iterator();
-    }
-
+    /**
+     * This method transforms the list of expressions into a list of column names (String) for easier manipulation.
+     * Both group by and projection elements are transformed into column names.
+     * @throws Exception
+     */
     private List<String> getColumns(List<Expression> expressionElements) {
         List<String> columnNames = new ArrayList<>();
         for (Expression expression : expressionElements) {
@@ -100,19 +60,71 @@ public class SumOperator extends Operator {
         return columnNames;
     }
 
+    /**
+     * This method returns the next tuple containing the computed sums and/or the group by columns.
+     * @return The next tuple containing the computed sums/groupby columns.
+     * @throws Exception
+     */
+    @Override
+    public Tuple getNextTuple() throws Exception {
+
+        // blocking operator, if the outputIterator is null all tuples should be processed
+        if (outputIterator == null) {
+            this.groupedTuples = new HashMap<>();
+            this.aggregateResults = new HashMap<>();
+            processGroupByAndSum();
+            this.outputIterator = aggregateResults.keySet().iterator();
+        }
+
+        // if tuples were processed, return the results
+        if (outputIterator.hasNext()) {
+            List<Integer> groupKey = outputIterator.next();
+            List<Integer> sums = aggregateResults.get(groupKey);
+            Tuple tuple = new Tuple();
+
+            // Since the group-by columns are not necessarily all projected,
+            // It is needed to filter the groupKey to only include the columns that are projected
+            if (!groupByColumnsNames.isEmpty() && !projectionColumns.isEmpty()) {
+                List<Integer> filteredGroupKey = filterGroupKey(groupKey, groupByColumnsNames, projectionColumns);
+                tuple.addValues(filteredGroupKey, projectionColumns);
+            }
+
+            // If there are sum expressions, add the sum values to the tuple.
+            // The SUM expressions are always at the end of the tuple
+            if (!sumExpressions.isEmpty()) {
+                tuple.addValues(sums, getSumExpressions(sumExpressions));
+            }
+            return tuple;
+        }
+        return null;
+    }
+
+    /**
+     * This method resets the operator setting the outputIterator again.
+     * @throws Exception
+     */
+    @Override
+    public void reset() throws Exception{
+        child.reset();
+        this.outputIterator = aggregateResults.keySet().iterator();
+    }
+
+    /**
+     * This method processes all tuples from the child operator, grouping the whole tuple by the group by columns
+     * and then, if it is needed, computing the sum of the specified expressions for each group.
+     * @throws Exception
+     */
     private void processGroupByAndSum() throws Exception {
         Tuple tuple;
 
-        // processing Groupby based on the columns - organizes tuples into
-        //groups
+        // processing all tuples from the child operator grouping them by the group by columns
         while ((tuple = child.getNextTuple()) != null) {
             List<Integer> groupKey = getGroupKey(tuple);
             groupedTuples.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(tuple);
         }
 
+        // for each group computes aggregate values, selecting the sum columns needed for the sum
         for (List<Integer> groupKey : groupedTuples.keySet()) {
-            // for each group computes aggregate values
-            // processing Sum based on the group by, using the whole tuple
             if (!sumExpressions.isEmpty()) {
                 List<Tuple> tuples = groupedTuples.get(groupKey);
                 List<Integer> sumValues = computeSums(tuples);
@@ -121,26 +133,18 @@ public class SumOperator extends Operator {
                 aggregateResults.put(groupKey,null);
             }
         }
-
     }
 
-    private List<Integer> filterGroupKey(List<Integer> groupKey, List<String> groupByColumnsNames, List<String> projectionColumns) {
-        List<Integer> filteredGroupKey = new ArrayList<>();
-
-        for (String projectionColumn : projectionColumns) {
-            int index = groupByColumnsNames.indexOf(projectionColumn);
-            if (index != -1) { // Si la columna proyectada está en groupByColumnsNames
-                filteredGroupKey.add(groupKey.get(index));
-            }
-        }
-
-        return filteredGroupKey;
-    }
-
+    /**
+     * This method returns the group key for the tuple.
+     * If there is no group by columns, the group key will be -1.
+     * @param tuple The tuple to get the group key.
+     * @return The group key for the tuple.
+     */
     private List<Integer> getGroupKey(Tuple tuple) {
         List<Integer> groupKey = new ArrayList<>();
         if(groupByColumnsNames.isEmpty()) {
-            // if there is not Groupby columns, we group by all columns -1
+            // if there is not Groupby columns, there will be one group with all columns, labeled as -1
             groupKey.add(-1);
             return groupKey;
         } else {
@@ -151,19 +155,50 @@ public class SumOperator extends Operator {
         return groupKey;
     }
 
+    /**
+     * This method filters the groupKey to only include the columns that are projected.
+     * @param groupKey The group key to be filtered.
+     * @param groupByColumnsNames The list of group by columns.
+     * @param projectionColumns The list of projection columns.
+     * @return The filtered group key.
+     */
+    private List<Integer> filterGroupKey(List<Integer> groupKey, List<String> groupByColumnsNames, List<String> projectionColumns) {
+        List<Integer> filteredGroupKey = new ArrayList<>();
+
+        for (String projectionColumn : projectionColumns) {
+            int index = groupByColumnsNames.indexOf(projectionColumn);
+            // if the column is not in the groupByColumnsNames, the index will be -1
+            if (index != -1) {
+                filteredGroupKey.add(groupKey.get(index));
+            }
+        }
+        return filteredGroupKey;
+    }
+
+    /**
+     * This method computes the sum of the specified expressions for each group. Three types of expressions
+     * are supported: constant, column or multiplication.
+     * @param tuples The list of tuples to compute the sum.
+     * @return The list of sums.
+     */
     private List<Integer> computeSums(List<Tuple> tuples) {
         List<Integer> sums = new ArrayList<>(Collections.nCopies(sumExpressions.size(), 0));
         for (Tuple tuple : tuples) {
             for (int i = 0; i < sumExpressions.size(); i++) {
                 // evaluate the sum expression: constant, column or multiplication
-                sums.set(i, sums.get(i) + evaluateSum(sumExpressions.get(i), tuple));
+                sums.set(i, sums.get(i) + obtainSum(sumExpressions.get(i), tuple));
             }
         }
         return sums;
     }
 
-    // Instructions: Each SUM can take as argument one term (integer or column) or a product of terms.(BinaryExpression)
-    private int evaluateSum(Expression expression, Tuple tuple) {
+    /**
+     * This method evaluates the sum expression. Three types of expressions are supported: constant, column or multiplication.
+     * @param expression The expression to be evaluated.
+     * @param tuple The tuple to get the value of the column.
+     * @return The value of the sum expression.
+     */
+    private int obtainSum(Expression expression, Tuple tuple) {
         if (expression instanceof Function) {
             ExpressionList parameters = ((Function) expression).getParameters();
 
@@ -178,32 +213,38 @@ public class SumOperator extends Operator {
                     return tuple.getValue(column.toString());
 
                 } else if (param instanceof BinaryExpression) { // sum multiplication
-                    return multiplicacionExpression((BinaryExpression) param, tuple); // SUM(A * B)
+                    // If the expression is a multiplication, the expression will be evaluated recursively
+                    return obtainMultiplication((BinaryExpression) param, tuple); // SUM(A * B)
                 }
             }
         }
         return 0;
     }
 
-    private int multiplicacionExpression(Expression expr, Tuple tuple) {
-        if (expr instanceof Column) {
-            // Si la expresión es una columna, obtenemos su valor del tuple
-            Column column = (Column) expr;
+    private int obtainMultiplication(Expression expression, Tuple tuple) {
+        if (expression instanceof Column) { // if the expression is a column
+            Column column = (Column) expression;
             return tuple.getValue(column.toString());
-        } else if (expr instanceof LongValue) {
-            // Si la expresión es un valor numérico (ej. 5, 10, etc.)
-            return (int) ((LongValue) expr).getValue();
-        } else if (expr instanceof Multiplication) {
-            // Si es una multiplicación, descomponemos en izquierda y derecha recursivamente
-            BinaryExpression multiplication = (BinaryExpression) expr;
-            int leftValue = multiplicacionExpression(multiplication.getLeftExpression(), tuple);
-            int rightValue = multiplicacionExpression(multiplication.getRightExpression(), tuple);
+
+        } else if (expression instanceof LongValue) { // if the expression is a constant
+            return (int) ((LongValue) expression).getValue();
+
+        } else if (expression instanceof Multiplication) { // if the expression is a multiplication
+            // If the expression is a multiplication, the expression will be evaluated recursively
+            BinaryExpression multiplication = (BinaryExpression) expression;
+            int leftValue = obtainMultiplication(multiplication.getLeftExpression(), tuple);
+            int rightValue = obtainMultiplication(multiplication.getRightExpression(), tuple);
             return leftValue * rightValue;
         } else {
-            throw new IllegalArgumentException("Tipo de expresión no soportado: " + expr);
+            throw new IllegalArgumentException("It is not supported Expression " + expression);
         }
     }
 
+    /**
+     * This method returns the sum expressions as a list of strings to be added to the tuple as column names.
+     * @param sumExpressions The list of sum expressions.
+     * @return The list of sum expressions as strings.
+     */
     private  List <String> getSumExpressions(List<Function> sumExpressions) {
         List<String> sumExpressionsList = new ArrayList<>();
         for (Function function : sumExpressions) {
