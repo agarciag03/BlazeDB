@@ -11,6 +11,17 @@ import net.sf.jsqlparser.schema.Column;
 
 import java.util.*;
 
+/**
+ * SumOperator is responsible for computing the SUM aggregation, either with or without a GROUP BY clause.
+ * This operator processes input tuples from a child operator, groups them based on specified
+ *  * GROUP BY columns (if present), and computes the sum of the specified expressions for each group.
+ *  * If no GROUP BY clause is specified, all tuples are treated as a single group. In this case, there will be just a group with label -1
+ * The algorithm applies the following steps:
+ *  * Scans all tuples from the child operator. It is a blocking operator.
+ *  * Groups tuples based on the GROUP BY columns using a HashMap.
+ *  * Computes SUM aggregations for each group.
+ *  * Stores the results and returns tuples containing the computed sums.
+ */
 public class SumOperator extends Operator {
     private Operator child;
     private List<String> groupByColumnsNames;
@@ -21,14 +32,18 @@ public class SumOperator extends Operator {
     private Map<List<Integer>, List<Integer>> aggregateResults;
     private Iterator<List<Integer>> outputIterator;
 
-    private boolean projection;  // Proyección de columnas
-
+    /**
+     * Constructor for the SumOperator class.
+     * @param child The child operator.
+     * @param groupByElements The list of group by elements.
+     * @param sumExpressions The list of sum expressions.
+     * @param projectionElements The list of projection elements.
+     */
     public SumOperator(Operator child, List<Expression> groupByElements, List<Function> sumExpressions, List<Expression> projectionElements) {
         this.child = child;
         this.groupByColumnsNames = getColumns(groupByElements);
         this.sumExpressions = sumExpressions;
         this.projectionColumns = getColumns(projectionElements);
-        //this.projection = projection;
     }
 
     @Override
@@ -169,22 +184,6 @@ public class SumOperator extends Operator {
         }
         return 0;
     }
-
-//    private int multiplicacionExpression(BinaryExpression expr, Tuple tuple) {
-//
-//        Expression leftExpression = expr.getLeftExpression();
-//        Column leftColumn = (Column) leftExpression;
-//        int leftValue = tuple.getValue(tuple.getColumnIndex(leftColumn.toString()));
-//
-//        Expression rightExpression = expr.getRightExpression();
-//        Column rightColumn = (Column) rightExpression;
-//        int rightValue = tuple.getValue(tuple.getColumnIndex(rightColumn.toString()));
-//
-//        if (expr instanceof Multiplication) {
-//            return leftValue * rightValue;
-//        }
-//        return 0;
-//    }
 
     private int multiplicacionExpression(Expression expr, Tuple tuple) {
         if (expr instanceof Column) {

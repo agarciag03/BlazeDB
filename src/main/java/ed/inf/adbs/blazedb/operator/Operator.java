@@ -6,7 +6,6 @@ import java.io.IOException;
 
 /**
  * The abstract Operator class for the iterator model.
- *
  * Feel free to modify this class, but must keep getNextTuple() and reset()
  */
 public abstract class Operator {

@@ -9,6 +9,11 @@ package ed.inf.adbs.blazedb;
 
 public class BlazeDB {
 
+	/**
+	 * Main method to interpret the query and write the result to the output file.
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
 
 		if (args.length != 3) {

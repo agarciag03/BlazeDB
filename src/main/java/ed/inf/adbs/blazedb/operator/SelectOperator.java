@@ -1,22 +1,31 @@
 package ed.inf.adbs.blazedb.operator;
 
 import ed.inf.adbs.blazedb.Tuple;
-import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.schema.Column;
 
+/**
+ * Operator to select the tuples based on the given condition.
+ */
 public class SelectOperator extends Operator {
 
     private Operator child;
-    private Expression condition;
     private ConditionEvaluator evaluator;
 
+    /**
+     * Constructor to initialize the select operator.
+     * @param child Child operator to get the tuples
+     * @param condition Condition to evaluate the tuples
+     */
     public SelectOperator(Operator child, Expression condition) {
         this.child = child;
-        this.condition = condition;
         this.evaluator = new ConditionEvaluator(condition);
     }
 
+    /**
+     * Get the next tuple from the child operator and evaluate the condition.
+     * @return Tuples that satisfy the given condition
+     * @throws Exception If the child operator throws an exception
+     */
     @Override
     public Tuple getNextTuple() throws Exception {
         Tuple tuple;
@@ -28,6 +37,10 @@ public class SelectOperator extends Operator {
         return null;
     }
 
+    /**
+     * Reset the child operator to read the tuples from the beginning.
+     * @throws Exception If the child operator throws an exception
+     */
     @Override
     public void reset() throws Exception {
         child.reset();
