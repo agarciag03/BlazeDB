@@ -50,5 +50,5 @@ Since ORDER BY is a blocking operator, having fewer tuples to process reduces me
 
 
 # Note for the reviewer
-* New queries were created for testing all the operators that the program can handle. These queries are in a new folder called input2.
+* New queries were created for testing all the operators and alternative cases that the program can handle. These queries are in a new folder called input2.
 * I also created new tables in the schema.txt and data files for testing purpose. 

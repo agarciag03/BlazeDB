@@ -1,0 +1,1 @@
+SELECT Course.G, Course.E, Course.F, Enrolled.A FROM Enrolled, Course WHERE Course.F > 10

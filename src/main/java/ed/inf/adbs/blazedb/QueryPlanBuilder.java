@@ -93,11 +93,7 @@ public class QueryPlanBuilder {
             }
         }
 
-        // 3. Apply the rest of projections if they are present and also if there are no sum or group by operators
-        // If  there are Sum or Groupby operator the projection will be done there.
-        if (projectionOperator && !sumOperator && !groupByOperator) {
-            rootOperator = new ProjectOperator(rootOperator, projectionExpressions);
-        }
+
 
         // 4. After applying all the projections, the program will do the cross products if they are present
         // OPTIMISATION: The cross products are done just with the columns needed to reduce the intermediate results
@@ -108,6 +104,13 @@ public class QueryPlanBuilder {
                 Operator scanRightTable = scanWithEarlyOptimisations(rightTableName);
                 rootOperator = new JoinOperator(rootOperator, scanRightTable, null);
             }
+        }
+
+        // Change order
+        // 3. Apply the rest of projections if they are present and also if there are no sum or group by operators
+        // If  there are Sum or Groupby operator the projection will be done there.
+        if (projectionOperator && !sumOperator && !groupByOperator) {
+            rootOperator = new ProjectOperator(rootOperator, projectionExpressions);
         }
 
         // 5. Since Groupby and Sum are blocking operators, they are applied almost at the end of the query plan
