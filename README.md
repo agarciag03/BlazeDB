@@ -1,4 +1,6 @@
-# Task 1: Explanation about the logic used for extracting join conditions from WHERE clause.
+# lightweight database management system
+
+## Explanation about the logic used for extracting join conditions from WHERE clause.
 
 For extracting join conditions from  the WHERE condition I considered the following steps:
 
@@ -20,7 +22,7 @@ If the join does not follow this order, I swap the join condition. I also take i
    For example: From S, R Where R.A = S.A, here I swap the join transform it into S.A = R.A.
 
 
-# Task 2: Optimisation rules/ Why they are correct / how they reduce the size of intermediate results during query evaluation.
+# Optimisation rules/ Why they are correct / how they reduce the size of intermediate results during query evaluation.
 Note: all the strategies mentioned here are in the code with a comment starting like: OPTIMISATION.
 
 The steps that I considered for the optimization rules and reducing intermediate results are:
@@ -48,7 +50,3 @@ These steps are correct as optimization rules because selection pushdown reduces
 1. If the DISTINCT operator is needed in the query, the program applies it before the ORDER BY operator. This strategy reduces the number of tuples that need to be sorted by ORDER BY, keeping only the distinct tuples required for the final result.
 Since ORDER BY is a blocking operator, having fewer tuples to process reduces memory usage, making sorting more efficient.  
 
-
-# Note for the reviewer
-* New queries were created for testing all the operators and alternative cases that the program can handle. These queries are in a new folder called input2.
-* I also created new tables in the schema.txt and data files for testing purpose. 
