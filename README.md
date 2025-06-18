@@ -1,28 +1,17 @@
-# lightweight database management system
+# BlazeBD: lightweight database management system
 
-## Explanation about the logic used for extracting join conditions from WHERE clause.
+BlazeDB is a SQL interpreter built entirely in Java that emulates fundamental parts of a relational database system. It executes SQL queries on a file-based database by parsing, analyzing, and delivering results based on relational algebra principles — all without depending on any external database software.
 
-For extracting join conditions from  the WHERE condition I considered the following steps:
+--
 
-1. In the class QueryPlanBuilder, there is a method called identifyElementsOperator. In this method, I identify the elements of the query mentioning steps. In the step 3, I identify the conditions in the WHERE clause. Since the WHERE Clause can have many expression concatenated by AND, I use a while to extract each WHERE expression and identify each of them.
-2. In the same class, in the method identifyWhereExpression, I identify each condition of WHERE clause as a join, selection or trivial expression. Each condition is defined as:
-* Joins: when there are two different table in the condition. For instance: Student.A = Enrolled.A
-* Selections: when the condition involves just one table, in this case it could be one column or two columns in the same table. For instance: Student.A = 1 or Student.A = Student.C.
-* Trivial expressions, when there values like 1= 1 or 2= 3 that end up being always true or false.
+## Key Features
+	•	SQL Query Parsing using JSQLParser
+	•	Query Execution Pipeline based on the iterator model, enabling tuple-at-a-time processing
+	•	Query Optimizations:
+ 
+--
 
-In particular, I identify the join conditions using the method isJoinCondition where I identify the expression on the left and right side of the WHERE condition. Then, if the left and right column of the WHERE condition are from different tables, it is classified and saved as a join condition.
-
-3. Then, I identify join tables to extracting them from the FROM clause. It is in the same method identifyElementsOperator, as step 4. 
-In this step, I identify the tables and I check if these tables have join conditions associated.
-In order to validate if the tables have join conditions, I use the method extractJoinConditions where I check if any of the join conditions extracted in the last steps involves this table is. 
-If there is not condition for this join table, this table is saved as a cross product.
-
-4. Finally, when I have all the join conditions, I sort them in the method sortJoinConditions. Here, I verify whether the join conditions are in the correct order, because my program will apply the left tree, keeping the scanned tables on the left side and scanning the new tables on the right side. 
-If the join does not follow this order, I swap the join condition. I also take into account that some comparisons like = or != are not affected when swapping the tables, but comparisons like >, <, >=, <=, are affected, so I need to modify the comparison operators as well.
-   For example: From S, R Where R.A = S.A, here I swap the join transform it into S.A = R.A.
-
-
-# Optimisation rules/ Why they are correct / how they reduce the size of intermediate results during query evaluation.
+## Optimisation rules:
 Note: all the strategies mentioned here are in the code with a comment starting like: OPTIMISATION.
 
 The steps that I considered for the optimization rules and reducing intermediate results are:
