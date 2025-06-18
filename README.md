@@ -2,14 +2,12 @@
 
 BlazeDB is a SQL interpreter built entirely in Java that emulates fundamental parts of a relational database system. It executes SQL queries on a file-based database by parsing, analyzing, and delivering results based on relational algebra principles — all without depending on any external database software.
 
---
 
 ## Key Features
 	•	SQL Query Parsing using JSQLParser
 	•	Query Execution Pipeline based on the iterator model, enabling tuple-at-a-time processing
 	•	Query Optimizations:
  
---
 
 ## Optimisation rules:
 Note: all the strategies mentioned here are in the code with a comment starting like: OPTIMISATION.
